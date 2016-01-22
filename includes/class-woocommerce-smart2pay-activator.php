@@ -29,8 +29,7 @@ class Woocommerce_Smart2pay_Activator {
 	 *
 	 * @since    1.0.0
 	 */
-	public static function activate() {
-
+	public static function activate()
+	{
 	}
-
 }

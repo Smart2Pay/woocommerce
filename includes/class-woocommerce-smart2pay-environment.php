@@ -26,13 +26,10 @@ class Woocommerce_Smart2pay_Environment
      */
     public static function toOptionArray()
     {
-        /** @var Woocommerce_Smart2pay $wc_s2p */
-        global $wc_s2p;
-
         return array(
-            self::ENV_DEMO => $wc_s2p->__( 'Demo' ),
-            self::ENV_TEST => $wc_s2p->__( 'Test' ),
-            self::ENV_LIVE => $wc_s2p->__( 'Live' ),
+            self::ENV_DEMO => WC_s2p()->__( 'Demo' ),
+            self::ENV_TEST => WC_s2p()->__( 'Test' ),
+            self::ENV_LIVE => WC_s2p()->__( 'Live' ),
        );
     }
 

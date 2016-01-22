@@ -7,28 +7,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 {
-    const ENV_DEMO = 'demo', ENV_TEST = 'test', ENV_LIVE = 'live';
-
     /**
      * Constructor for the gateway.
      */
     public function __construct()
     {
-        /** @var Woocommerce_Smart2pay $wc_s2p */
-        global $wc_s2p;
-
         $this->id                 = 'smart2pay';
         $this->icon               = ''; // If you want to show an image next to the gateway’s name on the frontend, enter a URL to an image.
         $this->has_fields         = true;
-        $this->method_title       = $wc_s2p->__( 'Smart2Pay' );
-        $this->method_description = $wc_s2p->__( 'Secure payments through 100+ alternative payment options.' );
+        $this->method_title       = WC_s2p()->__( 'Smart2Pay' );
+        $this->method_description = WC_s2p()->__( 'Secure payments through 100+ alternative payment options.' );
 
         // Load the settings.
         $this->init_form_fields();
         $this->init_settings();
 
         // Define user set variables
-        $this->title        = $this->get_option( 'title', $wc_s2p->__( 'Alternative payment methods' ) );
+        $this->title        = $this->get_option( 'title', WC_s2p()->__( 'Alternative payment methods' ) );
         $this->description  = 'Bubu description'; // $this->get_option( 'description' );
         $this->instructions = 'Some instructions for bubu'; // $this->get_option( 'instructions', $this->description );
 
@@ -65,16 +60,13 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
      */
     public function admin_options()
     {
-        /** @var Woocommerce_Smart2pay $wc_s2p */
-        global $wc_s2p;
-
         ob_start();
         parent::admin_options();
         $parent_buffer = ob_get_clean();
 
         ob_start();
         ?>
-        <h3><?php echo $wc_s2p->__( 'Methods Settings' ) ; ?></h3>
+        <h3><?php echo WC_s2p()->__( 'Methods Settings' ) ; ?></h3>
 
         <table class="form-table">
         <tr valign="top">
@@ -104,46 +96,43 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
      */
     public function init_form_fields()
     {
-        /** @var Woocommerce_Smart2pay $wc_s2p */
-        global $wc_s2p;
-
         $this->form_fields = array(
             'section_general' => array(
-                'title'   => $wc_s2p->__( 'General Settings' ),
+                'title'   => WC_s2p()->__( 'General Settings' ),
                 'type'    => 'title',
             ),
             'enabled' => array(
-                'title'   => $wc_s2p->__( 'Enabled' ),
+                'title'   => WC_s2p()->__( 'Enabled' ),
                 'type'    => 'checkbox',
-                'label'   => $wc_s2p->__( 'Enable Smart2Pay payment gateway' ),
+                'label'   => WC_s2p()->__( 'Enable Smart2Pay payment gateway' ),
                 'default' => 'yes'
             ),
             'title' => array(
-                'title'       => $wc_s2p->__( 'Method Title' ),
+                'title'       => WC_s2p()->__( 'Method Title' ),
                 'type'        => 'text',
-                'description' => $wc_s2p->__( 'This controls the title which the user sees during checkout.' ),
+                'description' => WC_s2p()->__( 'This controls the title which the user sees during checkout.' ),
                 'default'     => 'Smart2Pay - Alternative payment methods',
                 'desc_tip'    => true,
             ),
             'environment' => array(
-                'title'       => $wc_s2p->__( 'Environment' ),
+                'title'       => WC_s2p()->__( 'Environment' ),
                 'type'        => 'select',
-                'description' => $wc_s2p->__( 'To obtain your credentials for live and test environments, please contact us at <a href="mailto:support@smart2pay.com">support@smart2pay.com</a>.' ),
+                'description' => WC_s2p()->__( 'To obtain your credentials for live and test environments, please contact us at <a href="mailto:support@smart2pay.com">support@smart2pay.com</a>.' ),
                 'options'     => Woocommerce_Smart2pay_Displaymode::toOptionArray(),
                 'default'     => Woocommerce_Smart2pay_Displaymode::MODE_BOTH,
             ),
             'site_id' => array(
-                'title'       => $wc_s2p->__( 'Site ID' ),
+                'title'       => WC_s2p()->__( 'Site ID' ),
                 'type'        => 'text',
                 'default'     => 0,
             ),
             'skin_id' => array(
-                'title'       => $wc_s2p->__( 'Skin ID' ),
+                'title'       => WC_s2p()->__( 'Skin ID' ),
                 'type'        => 'text',
                 'default'     => 0,
             ),
             'return_url' => array(
-                'title'       => $wc_s2p->__( 'Return URL' ),
+                'title'       => WC_s2p()->__( 'Return URL' ),
                 'type'        => 'text',
                 'default'     => 0,
             ),

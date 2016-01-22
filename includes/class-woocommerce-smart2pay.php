@@ -78,7 +78,7 @@ class Woocommerce_Smart2pay
 	public function __construct() {
 
 		$this->plugin_name = 'woocommerce-smart2pay';
-		$this->version = '1.0.0';
+		$this->version = WC_SMART2PAY_VERSION;
 
 		$this->load_dependencies();
 		$this->set_locale();
@@ -103,7 +103,8 @@ class Woocommerce_Smart2pay
 	 * @since    1.0.0
 	 * @access   private
 	 */
-	private function load_dependencies() {
+	private function load_dependencies()
+    {
 
 		/**
 		 * The class responsible for orchestrating the actions and filters of the
@@ -130,6 +131,10 @@ class Woocommerce_Smart2pay
 
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-woocommerce-smart2pay-environment.php';
 		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-woocommerce-smart2pay-displaymode.php';
+
+		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-woocommerce-smart2pay-installer.php';
+
+		Woocommerce_Smart2pay_Installer::init();
 
 		$this->loader = new Woocommerce_Smart2pay_Loader();
 
@@ -247,6 +252,14 @@ class Woocommerce_Smart2pay
             return $str;
 
         return $this->lang->__( $str );
+    }
+
+    public function _x( $str, $context )
+    {
+        if( !$this->lang )
+            return $str;
+
+        return $this->lang->_x( $str, $context );
     }
 
 }

@@ -65,4 +65,9 @@ class Woocommerce_Smart2pay_i18n {
         return __( $str, $this->domain );
     }
 
+    public function _x( $str, $context )
+    {
+        return _x( $str, $context, $this->domain );
+    }
+
 }

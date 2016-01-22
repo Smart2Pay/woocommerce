@@ -26,13 +26,10 @@ class Woocommerce_Smart2pay_Displaymode
      */
     public static function toOptionArray()
     {
-        /** @var Woocommerce_Smart2pay $wc_s2p */
-        global $wc_s2p;
-
         return array(
-            self::MODE_LOGO => $wc_s2p->__( 'Demo' ),
-            self::MODE_TEXT => $wc_s2p->__( 'Test' ),
-            self::MODE_BOTH => $wc_s2p->__( 'Live' ),
+            self::MODE_LOGO => WC_s2p()->__( 'Demo' ),
+            self::MODE_TEXT => WC_s2p()->__( 'Test' ),
+            self::MODE_BOTH => WC_s2p()->__( 'Live' ),
        );
     }
 

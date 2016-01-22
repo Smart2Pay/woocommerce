@@ -1,5 +1,7 @@
 <?php
 
+define( 'WC_SMART2PAY_VERSION', '1.0.0' );
+
 /**
  * The plugin bootstrap file
  *
@@ -62,12 +64,7 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
     add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'woocommerce_smart2pay_action_links' );
     function woocommerce_smart2pay_action_links( $links )
     {
-        /** @var Woocommerce_Smart2pay $wc_s2p */
-        global $wc_s2p;
-
-        $settings_title = 'Settings';
-        if( !empty( $wc_s2p ) )
-            $settings_title = $wc_s2p->__( $settings_title );
+        $settings_title = WC_s2p()->__( 'Settings' );
 
         $plugin_links = array(
             '<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_smart2pay' ) . '">' . $settings_title . '</a>',
@@ -98,12 +95,21 @@ if ( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', g
         /** @var Woocommerce_Smart2pay $wc_s2p */
         global $wc_s2p;
 
-        define( 'WC_SMART2PAY_VERSION', '1.0.0' );
-
         $plugin = new Woocommerce_Smart2pay();
         $plugin->run();
 
         $wc_s2p = $plugin;
+    }
+
+    /**
+     * @return Woocommerce_Smart2pay
+     */
+    function WC_s2p()
+    {
+        /** @var Woocommerce_Smart2pay $wc_s2p */
+        global $wc_s2p;
+
+        return $wc_s2p;
     }
 
     run_woocommerce_smart2pay();
