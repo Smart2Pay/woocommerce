@@ -80,14 +80,52 @@ class Woocommerce_Smart2pay
 		$this->plugin_name = 'woocommerce-smart2pay';
 		$this->version = WC_SMART2PAY_VERSION;
 
+        // Add admin notices (depends on WC_Admin_Notices class)
+        if( is_admin() )
+            add_action( 'init', array( $this, 'load_dependencies_after_init' ), 11 );
+
 		$this->load_dependencies();
 		$this->set_locale();
 		$this->define_admin_hooks();
 		$this->define_public_hooks();
-
 	}
 
 	/**
+	 * Get the plugin url.
+	 * @return string
+	 */
+	public function plugin_url()
+    {
+		static $plugin_url = '';
+
+        if( !empty( $plugin_url ) )
+            return $plugin_url;
+
+        $plugin_url = untrailingslashit( plugins_url( '/', dirname( __FILE__ ) ) ).'/';
+        return $plugin_url;
+	}
+
+	/**
+	 * Get the plugin path.
+	 * @return string
+	 */
+	public function plugin_path()
+    {
+        static $plugin_path = '';
+
+        if( !empty( $plugin_path ) )
+            return $plugin_path;
+
+        $plugin_path = untrailingslashit( plugin_dir_path( dirname( __FILE__ ) ) ).'/';
+        return $plugin_path;
+	}
+
+    public function load_dependencies_after_init()
+    {
+        require_once $this->plugin_path() . 'includes/class-woocommerce-smart2pay-admin-notices.php';
+    }
+
+    /**
 	 * Load the required dependencies for this plugin.
 	 *
 	 * Include the following files that make up the plugin:
@@ -110,29 +148,31 @@ class Woocommerce_Smart2pay
 		 * The class responsible for orchestrating the actions and filters of the
 		 * core plugin.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-woocommerce-smart2pay-loader.php';
+		require_once $this->plugin_path() . 'includes/class-woocommerce-smart2pay-loader.php';
 
 		/**
 		 * The class responsible for defining internationalization functionality
 		 * of the plugin.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-woocommerce-smart2pay-i18n.php';
+		require_once $this->plugin_path() . 'includes/class-woocommerce-smart2pay-i18n.php';
 
 		/**
 		 * The class responsible for defining all actions that occur in the admin area.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-woocommerce-smart2pay-admin.php';
+		require_once $this->plugin_path() . 'admin/class-woocommerce-smart2pay-admin.php';
 
 		/**
 		 * The class responsible for defining all actions that occur in the public-facing
 		 * side of the site.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-woocommerce-smart2pay-public.php';
+		require_once $this->plugin_path() . 'public/class-woocommerce-smart2pay-public.php';
 
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-woocommerce-smart2pay-environment.php';
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-woocommerce-smart2pay-displaymode.php';
+		require_once $this->plugin_path() . 'includes/class-woocommerce-smart2pay-environment.php';
+		require_once $this->plugin_path() . 'includes/class-woocommerce-smart2pay-displaymode.php';
 
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-woocommerce-smart2pay-installer.php';
+        require_once $this->plugin_path() . 'includes/class-woocommerce-smart2pay-admin-notices-later.php';
+
+		require_once $this->plugin_path() . 'includes/class-woocommerce-smart2pay-installer.php';
 
 		Woocommerce_Smart2pay_Installer::init();
 
@@ -144,7 +184,7 @@ class Woocommerce_Smart2pay
 
     public function init_smart2pay_gateway()
     {
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-woocommerce-smart2pay-gateway.php';
+        require_once $this->plugin_path() . 'includes/class-woocommerce-smart2pay-gateway.php';
     }
 
     public function register_smart2pay_gateway( $load_gateways )

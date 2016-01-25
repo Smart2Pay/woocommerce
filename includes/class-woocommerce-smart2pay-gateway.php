@@ -23,9 +23,9 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         $this->init_settings();
 
         // Define user set variables
-        $this->title        = $this->get_option( 'title', WC_s2p()->__( 'Alternative payment methods' ) );
-        $this->description  = 'Bubu description'; // $this->get_option( 'description' );
-        $this->instructions = 'Some instructions for bubu'; // $this->get_option( 'instructions', $this->description );
+        $this->title        = $this->get_option( 'title', WC_s2p()->__( 'Smart2Pay - Alternative payment methods' ) );
+        $this->description  = $this->method_description;
+        $this->instructions = '';
 
         // Actions
         add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'save_payment_details' ) );
