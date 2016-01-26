@@ -37,7 +37,7 @@ class Woocommerce_Smart2pay_Installer
     public static function check_version()
     {
         // Make sure we can save notices as install action is executed before we have all things inited in plugin
-        require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-woocommerce-smart2pay-admin-notices-later.php';
+        require_once WC_S2P_PLUGIN_DIR . 'includes/class-woocommerce-smart2pay-admin-notices-later.php';
 
         if( !($current_version = get_option( self::VERSION_OPTION, false )) )
         {
@@ -94,18 +94,20 @@ class Woocommerce_Smart2pay_Installer
      */
     public static function create_pages()
     {
-        include_once( untrailingslashit( plugin_dir_path( WC_PLUGIN_FILE ) ) . '/includes/admin/wc-admin-functions.php' );
+        include_once( WC()->plugin_path() . '/includes/admin/wc-admin-functions.php' );
+
+        $wc_s2p = WC_s2p();
 
         $pages = apply_filters( 'woocommerce_smart2pay_create_pages', array(
             'smart2pay_pay' => array(
                 'name'    => WC_s2p()->_x( 'smart2pay_pay', 'Page slug' ),
                 'title'   => WC_s2p()->_x( 'Smart2Pay Payment', 'Page title' ),
-                'content' => '[woocommerce_smart2pay_pay]'
+                'content' => '['.$wc_s2p::SHORTCODE_PAYMENT.']'
             ),
             'smart2pay_return' => array(
                 'name'    => WC_s2p()->_x( 'smart2pay_return', 'Page slug' ),
                 'title'   => WC_s2p()->_x( 'Smart2Pay Return Page', 'Page title' ),
-                'content' => '[woocommerce_smart2pay_return]'
+                'content' => '['.$wc_s2p::SHORTCODE_RETURN.']'
             ),
         ) );
 
@@ -195,14 +197,16 @@ class Woocommerce_Smart2pay_Installer
         }
 
         if( !($wpdb->query( "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}smart2pay_method (
-                        method_id int(11) NOT NULL AUTO_INCREMENT,
+                        id int(11) NOT NULL AUTO_INCREMENT,
+                        method_id int(11) NOT NULL default 0,
                         environment varchar(50) default NULL,
                         display_name varchar(255) default NULL,
                         description text,
                         logo_url varchar(255) default NULL,
                         guaranteed tinyint(2) default 0,
                         active tinyint(2) default 0,
-                        PRIMARY KEY (method_id),
+                        PRIMARY KEY (id),
+                        KEY method_id (method_id),
                         KEY active (active),
                         KEY environment (environment)
                     ) $collate;" )) )

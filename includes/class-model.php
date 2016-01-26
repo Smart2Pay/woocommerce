@@ -4,17 +4,21 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit; // Exit if accessed directly
 }
 
-abstract class WC_S2P_Model
+abstract class WC_S2P_Model extends WC_S2P_Base
 {
-    const ERR_OK = 0, ERR_GENERIC = 1, ERR_PARAMETERS = 2;
-
-    private $error_code = 0;
-    private $error_msg = '';
+    const ERR_GENERIC = 1, ERR_PARAMETERS = 2;
 
     private $last_result = false;
 
     abstract public function get_table();
     abstract public function get_table_fields();
+
+    public function __construct( $init_params = false )
+    {
+        parent::__construct( $init_params );
+
+        $this->last_result( false );
+    }
 
     /**
      * Overwrite this method to alter parameters sent to add method
@@ -420,7 +424,7 @@ abstract class WC_S2P_Model
         return $ret;
     }
 
-    protected function get_list_common( $params = false )
+    public function get_list( $params = false )
     {
         global $wpdb;
 
@@ -460,38 +464,19 @@ abstract class WC_S2P_Model
 
         if( ($params = $this->get_list_prepare_params( $params )) === false
          or ($params = $this->get_query_fields( $params )) === false
-         or !($qid = $wpdb->query( 'SELECT '.$params['db_fields'].' '.
+         or !($rows_arr = $wpdb->get_results( 'SELECT '.$params['db_fields'].' '.
                               ' FROM `'.$params['table_name'].'` '.
                               $params['join_sql'].
                               (!empty( $params['extra_sql'] )?' WHERE '.$params['extra_sql']:'').
                               (!empty( $params['group_by'] )?' GROUP BY '.$params['group_by']:'').
                               (!empty( $params['order_by'] )?' ORDER BY '.$params['order_by']:'').
-                              ' LIMIT '.$params['offset'].', '.$params['enregs_no']
+                              ' LIMIT '.$params['offset'].', '.$params['enregs_no'], ARRAY_A
                 ))
-        or !($rows_number = db_num_rows( $qid, $params['db_connection'] )) )
+         or !is_array( $rows_arr ) )
             return false;
-
-        $return_arr = array();
-        $return_arr['params'] = $params;
-        $return_arr['qid'] = $qid;
-        $return_arr['item_count'] = $rows_number;
-
-        return $return_arr;
-    }
-
-    public function get_list( $params = false )
-    {
-        $this->reset_error();
-
-        if( !($common_arr = $this->get_list_common( $params ))
-         or !is_array( $common_arr ) or empty( $common_arr['qid'] ) )
-            return false;
-
-        if( !empty( $params['get_query_id'] ) )
-            return $common_arr['qid'];
 
         $ret_arr = array();
-        while( ($item_arr = db_fetch_assoc( $common_arr['qid'], $params['db_connection'] )) )
+        foreach( $rows_arr as $item_arr )
         {
             $key = $params['table_index'];
             if( isset( $item_arr[$params['arr_index_field']] ) )
@@ -538,6 +523,99 @@ abstract class WC_S2P_Model
 
         $this->last_result = $last_result;
         return $this->last_result;
+    }
+
+    public function get_details_fields( $constrain_arr, $params = false )
+    {
+        global $wpdb;
+
+        $this->reset_error();
+
+        if( empty( $params ) or !is_array( $params ) )
+            $params = array();
+
+        if( empty( $params['table_name'] ) )
+            $table_name = $this->get_table();
+        else
+            $table_name = $params['table_name'];
+
+        if( empty( $constrain_arr ) or !is_array( $constrain_arr )
+         or empty( $table_name )
+         or !($table_index = $this->get_primary()) )
+            return false;
+
+        if( empty( $params['details'] ) )
+            $params['details'] = '*';
+        if( !isset( $params['result_type'] ) )
+            $params['result_type'] = 'single';
+        if( !isset( $params['result_key'] ) )
+            $params['result_key'] = $table_index;
+        if( empty( $params['extra_sql'] ) )
+            $params['extra_sql'] = '';
+        if( empty( $params['order_by'] ) )
+            $params['order_by'] = '';
+
+        if( !isset( $params['limit'] ) )
+            $params['limit'] = 1;
+
+        else
+        {
+            $params['limit'] = intval( $params['limit'] );
+            $params['result_type'] = 'list';
+        }
+
+        foreach( $constrain_arr as $field_name => $field_val )
+        {
+            $field_name = trim( $field_name );
+            if( empty( $field_name ) )
+                continue;
+
+            if( strstr( $field_name, '.' ) === false )
+                $field_name = '`'.$table_name.'`.`'.$field_name.'`';
+
+            if( !is_array( $field_val ) )
+            {
+                if( $field_val !== false )
+                    $params['extra_sql'] .= (!empty( $params['extra_sql'] )?' AND ':'').' '.$field_name.' = \''.$wpdb->_escape( $field_val ).'\' ';
+            } else
+            {
+                if( empty( $field_val['field'] ) )
+                    $field_val['field'] = $field_name;
+                if( empty( $field_val['check'] ) )
+                    $field_val['check'] = '=';
+                if( !isset( $field_val['value'] ) )
+                    $field_val['value'] = false;
+
+                if( $field_val['value'] !== false )
+                {
+                    $field_val['check'] = trim( $field_val['check'] );
+                    if( in_array( strtolower( $field_val['check'] ), array( 'in', 'is' ) ) )
+                        $check_value = $field_val['value'];
+                    else
+                        $check_value = '\''.$wpdb->_escape( $field_val['value'] ).'\'';
+
+                    $params['extra_sql'] .= (!empty( $params['extra_sql'] )?' AND ':'').' '.$field_val['field'].' '.$field_val['check'].' '.$check_value.' ';
+                }
+            }
+        }
+
+        if( !($results = $wpdb->get_results( 'SELECT '.$params['details'].' FROM '.$table_name.' WHERE '.$params['extra_sql'].
+                               (!empty( $params['order_by'] )?' ORDER BY '.$params['order_by']:'').
+                               (isset( $params['limit'] )?' LIMIT 0, '.$params['limit']:''), ARRAY_A ))
+         or !is_array( $results ) )
+            return false;
+
+        if( $params['result_type'] == 'single' )
+            $item_arr = array_pop( $results );
+
+        else
+        {
+            $item_arr = array();
+            foreach( $results as $row_arr )
+                $item_arr[$row_arr[$params['result_key']]] = $row_arr;
+        }
+
+        return $item_arr;
     }
 
     public function get_details( $id, $params = false )
@@ -621,11 +699,11 @@ abstract class WC_S2P_Model
 
         $fields_structure = self::default_fields_structure();
 
-        $fields = apply_filters( $fields, array(), $table_name );
+        $fields = apply_filters( 'wc_s2p_model_validate_fields', $fields, array(), $table_name );
 
         if( empty( $fields ) or !is_array( $fields ) )
         {
-            $this->set_error( self::ERR_PARAMETERS, WC_s2p()->__( 'Table fields to edit not provided.' ) );
+            $this->set_error( self::ERR_PARAMETERS, WC_s2p()->__( 'Table fields not provided.' ) );
             return false;
         }
 
@@ -675,12 +753,12 @@ abstract class WC_S2P_Model
                 if( empty( $val['raw_field'] ) )
                 {
                     if( !empty( $params['secure'] ) )
-                        $field_value = $wpdb->_escape( $field_value );
+                        $field_value = self::prepare_data( $wpdb->_escape( $field_value ) );
 
                     $field_value = '\''.$field_value.'\'';
                 }
             } else
-                $field_value = '\''.(!empty( $params['secure'] )?$wpdb->_escape( $val ):$val).'\'';
+                $field_value = '\''.(!empty( $params['secure'] )?self::prepare_data( $wpdb->_escape( $val ) ):$val).'\'';
 
             $return .= '`'.$key.'`='.$field_value.', ';
         }
@@ -721,12 +799,12 @@ abstract class WC_S2P_Model
                 if( empty( $val['raw_field'] ) )
                 {
                     if( !empty( $params['secure'] ) )
-                        $field_value = $wpdb->_escape( $field_value );
+                        $field_value = self::prepare_data( $wpdb->_escape( $field_value ) );
 
                     $field_value = '\''.$field_value.'\'';
                 }
             } else
-                $field_value = '\''.(!empty( $params['secure'] )?$wpdb->_escape( $val ):$val).'\'';
+                $field_value = '\''.(!empty( $params['secure'] )?self::prepare_data( $wpdb->_escape( $val ) ):$val).'\'';
 
             $return .= '`'.$key.'`='.$field_value.', ';
         }
@@ -737,28 +815,10 @@ abstract class WC_S2P_Model
         return 'UPDATE `'.$this->get_table().'` SET '.substr( $return, 0, -2 );
     }
 
-    public function reset_error()
+    static function prepare_data( $data )
     {
-        $this->error_code = self::ERR_OK;
-        $this->error_msg = '';
-    }
+        $data = str_replace( '\'', '\\\'', str_replace( '\\\'', '\'', $data ) );
 
-    public function set_error( $code, $msg )
-    {
-        $this->error_code = $code;
-        $this->error_msg = $msg;
-    }
-
-    public function has_error()
-    {
-        return ($this->error_code != self::ERR_OK);
-    }
-
-    public function get_error()
-    {
-        return array(
-            'code' => $this->error_code,
-            'message' => $this->error_msg,
-        );
+        return $data;
     }
 }

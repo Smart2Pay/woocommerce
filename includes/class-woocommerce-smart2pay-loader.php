@@ -41,17 +41,42 @@ class Woocommerce_Smart2pay_Loader {
 	 */
 	protected $filters;
 
+	// tells what file to include for specific model class (paths are relative to plugin directory)
+    // class name should be same case as class name (including namespace if required) in this array
+    private $_models_arr = array(
+        'WC_S2P_Methods_Model' => 'includes/class-model-methods.php',
+    );
+
 	/**
 	 * Initialize the collections used to maintain the actions and filters.
 	 *
 	 * @since    1.0.0
 	 */
-	public function __construct() {
-
+	public function __construct()
+    {
 		$this->actions = array();
 		$this->filters = array();
-
 	}
+
+    public function load_model( $class, $init_params = false )
+    {
+        if( empty( $class ) )
+            return false;
+
+        $class = str_replace( '..', '.', $class );
+        if( empty( $this->_models_arr[$class] )
+         or !@file_exists( WC_s2p()->plugin_path().$this->_models_arr[$class] ) )
+            return false;
+
+        include_once( WC_s2p()->plugin_path().$this->_models_arr[$class] );
+
+        if( !class_exists( $class, false ) )
+            return false;
+
+        $model_obj = new $class( $init_params );
+
+        return $model_obj;
+    }
 
 	/**
 	 * Add a new action to the collection to be registered with WordPress.

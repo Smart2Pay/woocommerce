@@ -1,6 +1,6 @@
 <?php
 
-define( 'WC_SMART2PAY_VERSION', '1.0.1' );
+define( 'WC_SMART2PAY_VERSION', '1.0.2' );
 
 /**
  * The plugin bootstrap file
@@ -11,7 +11,7 @@ define( 'WC_SMART2PAY_VERSION', '1.0.1' );
  * that starts the plugin.
  *
  * @link              http://www.smart2pay.com
- * @since             1.0.1
+ * @since             1.0.2
  * @package           Woocommerce_Smart2pay
  *
  * @wordpress-plugin
@@ -39,6 +39,7 @@ if ( ! defined( 'WPINC' ) ) {
  **/
 if( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) )
 {
+    define( 'WC_S2P_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
     /**
      * The code that runs during plugin activation.
@@ -46,7 +47,7 @@ if( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', ge
      */
     function activate_woocommerce_smart2pay()
     {
-        require_once plugin_dir_path( __FILE__ ) . 'includes/class-woocommerce-smart2pay-activator.php';
+        require_once WC_S2P_PLUGIN_DIR . 'includes/class-woocommerce-smart2pay-activator.php';
         Woocommerce_Smart2pay_Activator::activate();
     }
 
@@ -56,7 +57,7 @@ if( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', ge
      */
     function deactivate_woocommerce_smart2pay()
     {
-        require_once plugin_dir_path( __FILE__ ) . 'includes/class-woocommerce-smart2pay-deactivator.php';
+        require_once WC_S2P_PLUGIN_DIR . 'includes/class-woocommerce-smart2pay-deactivator.php';
         Woocommerce_Smart2pay_Deactivator::deactivate();
     }
 
@@ -82,8 +83,21 @@ if( in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', ge
      * The core plugin class that is used to define internationalization,
      * admin-specific hooks, and public-facing site hooks.
      */
-    require_once plugin_dir_path( __FILE__ ) . 'includes/phs_params.php';
-    require_once plugin_dir_path( __FILE__ ) . 'includes/class-woocommerce-smart2pay.php';
+    if( @is_dir( WC_S2P_PLUGIN_DIR.'includes/sdk' )
+    and @file_exists( WC_S2P_PLUGIN_DIR.'includes/sdk/bootstrap.php' ) )
+    {
+        include_once( WC_S2P_PLUGIN_DIR.'includes/sdk/bootstrap.php' );
+
+        S2P_SDK\S2P_SDK_Module::st_debugging_mode( false );
+        S2P_SDK\S2P_SDK_Module::st_detailed_errors( false );
+        S2P_SDK\S2P_SDK_Module::st_throw_errors( false );
+    }
+
+    require_once WC_S2P_PLUGIN_DIR . 'includes/phs_params.php';
+    require_once WC_S2P_PLUGIN_DIR . 'includes/class-base.php';
+    require_once WC_S2P_PLUGIN_DIR . 'includes/class-woocommerce-smart2pay.php';
+    require_once WC_S2P_PLUGIN_DIR . 'includes/class-wc-smart2pay-sdk-interface.php';
+    require_once WC_S2P_PLUGIN_DIR . 'includes/class-wc-smart2pay-helper.php';
 
     /**
      * Begins execution of the plugin.

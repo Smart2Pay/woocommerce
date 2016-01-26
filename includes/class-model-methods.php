@@ -6,14 +6,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class WC_S2P_Methods_Model extends WC_S2P_Model
 {
+    public function get_db_methods()
+    {
+        static $all_methods = array();
+
+        if( !empty( $all_methods ) )
+            return $all_methods;
+
+        $list_arr = array();
+        $list_arr['order_by'] = 'display_name ASC';
+
+        if( !($all_methods = self::get_list( $list_arr )) )
+            $all_methods = array();
+
+        return $all_methods;
+    }
+
     public function get_table_fields()
     {
         return array(
-            'method_id' => array(
+            'id' => array(
                 'type' => PHS_params::T_INT,
                 'default' => 0,
                 'editable' => false,
                 'primary' => true,
+            ),
+            'method_id' => array(
+                'type' => PHS_params::T_INT,
+                'default' => 0,
+                'editable' => true,
             ),
             'environment' => array(
                 'type' => PHS_params::T_NOHTML,

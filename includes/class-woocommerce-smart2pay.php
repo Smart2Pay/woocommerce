@@ -29,6 +29,9 @@
  */
 class Woocommerce_Smart2pay
 {
+    // woocommerce_smart2pay_notification
+    const SHORTCODE_PAYMENT = 'woocommerce_smart2pay_pay', SHORTCODE_RETURN = 'woocommerce_smart2pay_return';
+
 	/**
 	 * The loader that's responsible for maintaining and registering all hooks that power
 	 * the plugin.
@@ -116,7 +119,7 @@ class Woocommerce_Smart2pay
         if( !empty( $plugin_path ) )
             return $plugin_path;
 
-        $plugin_path = untrailingslashit( plugin_dir_path( dirname( __FILE__ ) ) ).'/';
+        $plugin_path = untrailingslashit( WC_S2P_PLUGIN_DIR ).'/';
         return $plugin_path;
 	}
 
@@ -173,6 +176,10 @@ class Woocommerce_Smart2pay
         require_once $this->plugin_path() . 'includes/class-woocommerce-smart2pay-admin-notices-later.php';
 
 		require_once $this->plugin_path() . 'includes/class-woocommerce-smart2pay-installer.php';
+
+		require_once $this->plugin_path() . 'includes/class-model.php';
+
+		require_once $this->plugin_path() . 'includes/class-wc-smart2pay-sdk-interface.php';
 
 		Woocommerce_Smart2pay_Installer::init();
 
