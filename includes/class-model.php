@@ -137,7 +137,7 @@ abstract class WC_S2P_Model extends WC_S2P_Base
         return $params;
     }
 
-    public function add( $params )
+    public function insert( $params )
     {
         global $wpdb;
 
@@ -734,8 +734,10 @@ abstract class WC_S2P_Model extends WC_S2P_Base
         if( empty( $params ) or !is_array( $params ) )
             $params = array();
 
-        if( !isset( $params['escape'] ) )
-            $params['escape'] = true;
+        if( !isset( $params['secure'] ) )
+            $params['secure'] = true;
+        if( empty( $params['table_name'] ) )
+            $params['table_name'] = $this->get_table();
 
         $return = '';
         foreach( $insert_arr as $key => $val )
@@ -766,7 +768,7 @@ abstract class WC_S2P_Model extends WC_S2P_Base
         if( $return == '' )
             return '';
 
-        return 'INSERT INTO `'.$this->get_table().'` SET '.substr( $return, 0, -2 );
+        return 'INSERT INTO `'.$params['table_name'].'` SET '.substr( $return, 0, -2 );
     }
 
     // Returns an EDIT query string for model table using $edit_arr data conditions added outside this method
@@ -780,8 +782,10 @@ abstract class WC_S2P_Model extends WC_S2P_Base
         if( empty( $params ) or !is_array( $params ) )
             $params = array();
 
-        if( !isset( $params['escape'] ) )
-            $params['escape'] = true;
+        if( !isset( $params['secure'] ) )
+            $params['secure'] = true;
+        if( empty( $params['table_name'] ) )
+            $params['table_name'] = $this->get_table();
 
         $return = '';
         foreach( $edit_arr as $key => $val )
@@ -812,7 +816,7 @@ abstract class WC_S2P_Model extends WC_S2P_Base
         if( $return == '' )
             return '';
 
-        return 'UPDATE `'.$this->get_table().'` SET '.substr( $return, 0, -2 );
+        return 'UPDATE `'.$params['table_name'].'` SET '.substr( $return, 0, -2 );
     }
 
     static function prepare_data( $data )

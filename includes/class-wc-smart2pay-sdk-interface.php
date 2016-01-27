@@ -124,8 +124,107 @@ class WC_S2P_SDK_Interface extends WC_S2P_Base
         return $call_result['call_result']['methods'];
     }
 
+    public function get_method_details( $method_id, $plugin_settings_arr = false )
+    {
+        $this->reset_error();
+
+        if( empty( $plugin_settings_arr ) or !is_array( $plugin_settings_arr ) )
+            $plugin_settings_arr = WC_S2P_Helper::get_plugin_settings();
+
+        $method_id = intval( $method_id );
+        if( empty( $method_id )
+         or !($api_credentials = $this->get_api_credentials()) )
+            return false;
+
+        $api_parameters['api_key'] = $api_credentials['api_key'];
+        $api_parameters['site_id'] = $api_credentials['site_id'];
+        $api_parameters['environment'] = $api_credentials['environment'];
+
+        $api_parameters['method'] = 'methods';
+        $api_parameters['func'] = 'method_details';
+
+        $api_parameters['get_variables'] = array(
+            'id' => $method_id,
+        );
+        $api_parameters['method_params'] = array();
+
+        $call_params = array();
+
+        $finalize_params = array();
+        $finalize_params['redirect_now'] = false;
+
+        if( !($call_result = S2P_SDK\S2P_SDK_Module::quick_call( $api_parameters, $call_params, $finalize_params ))
+         or empty( $call_result['call_result'] ) or !is_array( $call_result['call_result'] )
+         or empty( $call_result['call_result']['method'] ) or !is_array( $call_result['call_result']['method'] ) )
+        {
+            if( ($error_arr = S2P_SDK\S2P_SDK_Module::st_get_error())
+            and !empty( $error_arr['display_error'] ) )
+                $this->set_error( self::ERR_GENERIC, $error_arr['display_error'] );
+            else
+                $this->set_error( self::ERR_GENERIC, WC_s2p()->__( 'API call failed while obtaining method details.' ) );
+
+            return false;
+        }
+
+        return $call_result['call_result']['method'];
+    }
+
+    public function update_db_method_details( $method_data, $plugin_settings_arr = false )
+    {
+        $this->reset_error();
+
+        if( empty( $plugin_settings_arr ) or !is_array( $plugin_settings_arr ) )
+            $plugin_settings_arr = WC_S2P_Helper::get_plugin_settings();
+
+        /** @var WC_S2P_Methods_Model $methods_model */
+        if( !($methods_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Methods_Model' )) )
+        {
+            $this->set_error( self::ERR_GENERIC, WC_s2p()->__( 'Couldn\'t load methods model.' ) );
+            return false;
+        }
+
+        if( !($method_arr = $methods_model->data_to_array( $method_data )) )
+        {
+            $this->set_error( self::ERR_GENERIC, WC_s2p()->__( 'Couldn\'t obtain method details.' ) );
+            return false;
+        }
+
+        if( !($method_details = $this->get_method_details( $method_arr['method_id'], $plugin_settings_arr )) )
+        {
+            if( !$this->has_error() )
+                $this->set_error( self::ERR_GENERIC, WC_s2p()->__( 'Couldn\'t obtain method details.' ) );
+            return false;
+        }
+
+        if( empty( $method_details['countries'] ) or !is_array( $method_details['countries'] ) )
+            $method_details['countries'] = array();
+
+        $country_codes = array();
+        foreach( $method_details['countries'] as $country_code )
+        {
+            if( empty( $country_code ) )
+                continue;
+
+            $country_codes[$country_code] = 1;
+        }
+
+        if( $methods_model->update_method_countries( $method_arr, array_keys( $country_codes ) ) === false )
+        {
+            if( $methods_model->has_error() )
+                $this->copy_error_from_array( $methods_model->get_error() );
+            else
+                $this->set_error( self::ERR_GENERIC, WC_s2p()->__( 'Error updating method countries.' ) );
+
+            return false;
+        }
+
+        return true;
+    }
+
     public function refresh_available_methods( $plugin_settings_arr = false )
     {
+        global $wpdb;
+
         $this->reset_error();
 
         /** @var WC_S2P_Methods_Model $methods_model */
@@ -181,7 +280,7 @@ class WC_S2P_SDK_Interface extends WC_S2P_Base
                 $insert_arr = array();
                 $insert_arr['fields'] = $row_method_arr;
 
-                if( !($saved_method = $methods_model->add( $insert_arr )) )
+                if( !($saved_method = $methods_model->insert( $insert_arr )) )
                 {
                     if( $methods_model->has_error() )
                         $this->set_error( self::ERR_GENERIC, $methods_model->get_error_message() );
@@ -192,7 +291,15 @@ class WC_S2P_SDK_Interface extends WC_S2P_Base
             }
 
             $saved_methods[$saved_method['method_id']] = $saved_method;
+
+            $this->update_db_method_details( $saved_method, $plugin_settings_arr );
         }
+
+        if( !($method_ids = array_keys( $saved_methods )) )
+            $wpdb->query( 'UPDATE '.$methods_model->get_table().' SET active = 0 WHERE environment = \''.$plugin_settings_arr['environment'].'\'' );
+        else
+            $wpdb->query( 'UPDATE '.$methods_model->get_table().' SET active = 0 WHERE environment = \''.$plugin_settings_arr['environment'].'\' '.
+                            ' AND method_id NOT IN ('.implode( ',', $method_ids ).')' );
 
         self::last_methods_sync_option( false, $plugin_settings_arr );
 

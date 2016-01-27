@@ -50,4 +50,14 @@ class WC_S2P_Base
     {
         return $this->error_code;
     }
+
+    public function copy_error_from_array( $error_arr )
+    {
+        if( empty( $error_arr ) or !is_array( $error_arr )
+         or !isset( $error_arr['code'] ) or !isset( $error_arr['message'] ) )
+            return false;
+
+        $this->error_code = $error_arr['code'];
+        $this->error_msg = $error_arr['message'];
+    }
 }

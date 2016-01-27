@@ -108,14 +108,9 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             <?php
         } else
         {
-            $methods_list_arr = array();
-            /** @var WC_S2P_Methods_Model $methods_model */
-            if( ($methods_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Methods_Model' )) )
-            {
-                $methods_list_arr = $methods_model->get_db_methods();
-            }
-
             ?>
+            <p class="submit"><input name="save" class="button-primary" type="submit" value="Save changes" /></p>
+
             <a name="smart2pay_methods"></a>
             <h3>Payment Methods</h3>
             <?php
@@ -129,21 +124,27 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                         $error_msg = $sdk_interface->get_error_message();
 
                     ?>
-                    <div id="message" class="error">
+                    <span class="error">
                     <p><strong><?php echo $error_msg?></strong></p>
-                    </div>
+                    </span>
                     <?php
                 } else
                 {
                     ?>
-                    <div id="message" class="updated">
+                    <span class="updated">
                     <p><strong>Payment methods syncronized with success.</strong></p>
-                    </div>
+                    </span>
                     <?php
                 }
             }
 
-            //var_dump( $sdk_interface->get_available_methods( $this->settings ) );
+            $methods_list_arr = array();
+            $methods_configured_arr = array();
+            /** @var WC_S2P_Methods_Model $methods_model */
+            if( ($methods_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Methods_Model' )) )
+            {
+                $methods_list_arr = $methods_model->get_db_available_methods();
+            }
 
             if( !($last_sync_date = WC_S2P_SDK_Interface::last_methods_sync_option()) )
                 $last_sync_date = false;
@@ -161,9 +162,11 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             {
                 ?>
                 <p>
-                It appears that you don't have any payment methods currently in database.
+                It appears that you don't have any payment methods currently in database for <strong><?php echo $this->settings['environment'] ?></strong> environment.
                 In order to obtain available payment methods for current plugin setup you will have to syncronize your database with our servers.
-                <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_smart2pay&sync_methods=1' )?>#smart2pay_methods" class="button-primary">Syncronize Now</a>
+                </p>
+                <p>
+                    <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_smart2pay&sync_methods=1' )?>#smart2pay_methods" class="button-primary">Syncronize Now</a>
                 </p>
                 <?php
             } else
@@ -172,26 +175,59 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 <p>
                     <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_smart2pay&sync_methods=1' )?>#smart2pay_methods" class="button-primary">Re-Syncronize Methods</a>
                 </p>
-                <?php
-            }
-            ?>
 
+                <p style="margin-bottom: 0 !important;"><?php echo count( $methods_list_arr )?> payment methods currently available.</p>
 
-            <table class="form-table">
-                <tr valign="top">
-                    <th scope="row" class="titledesc">
-                        <label for="testing">Bubu</label>
-                    </th>
-                    <td class="forminp">
-                        <fieldset>
-                            <legend class="screen-reader-text"><span>Vasile</span></legend>
-                            <input class="input-text regular-input" type="text" name="testing" id="testing" value="1" placeholder="blabla"/>
-                            Description
-                        </fieldset>
-                    </td>
+                <style>
+                .s2p-methods-row-active {}
+                .s2p-methods-row-inactive { background-color: lightgrey; color: #787878; }
+                .s2p-method-img { vertical-align: middle; max-height: 40px; max-width: 130px; }
+                .sp2-middle-all { text-align: center; vertical-align: middle; }
+                .s2p-method-img-td { height: 50px; width: 134px; text-align: center; }
+                </style>
+
+                <table class="form-table">
+                <thead>
+                <tr>
+                    <th style="width: 60px;">Enabled?</th>
+                    <th style="width: 90px;">Surcharge</th>
+                    <th colspan="2">Method</th>
                 </tr>
-            </table>
+                </thead>
+                <tbody>
+                <?php
+                $wc_currency = get_woocommerce_currency();
+                foreach( $methods_list_arr as $method_id => $method_arr )
+                {
+                    $method_settings = false;
+                    if( !empty( $methods_configured_arr[$method_arr['method_id']] ) and is_array( $methods_configured_arr[$method_arr['method_id']] ) )
+                        $method_settings = $methods_configured_arr[$method_arr['method_id']];
 
+                    ?>
+                    <tr>
+                        <td class="sp2-middle-all"><input type="checkbox" name="s2p_enabled_methods[]" id="s2p_enabled_method_<?php echo $method_arr['method_id']?>" value="<?php echo $method_arr['method_id']?>" <?php (!empty( $method_settings )?'checked="checked"':'')?> /></td>
+                        <td>
+                            <div style="padding:2px; clear:both;">
+                                <input type="text" class="input-text" style="width: 50px !important; text-align: right;" name="s2p_surcharge[<?php echo $method_arr['method_id']?>]" id="s2p_surcharge_<?php echo $method_arr['method_id']?>" value="<?php echo ((!empty( $method_settings ) and isset( $method_settings['surcharge_percent'] ))?$method_settings['surcharge_percent']:0)?>" />%
+                            </div>
+
+                            <div style="padding:2px; clear:both;">
+                                <input type="text" class="input-text" style="width: 50px !important; text-align: right;" name="s2p_fixed_amount[<?php echo $method_arr['method_id']?>]" id="s2p_fixed_amount_<?php echo $method_arr['method_id']?>" value="<?php echo ((!empty( $method_settings ) and isset( $method_settings['surcharge_percent'] ))?$method_settings['surcharge_percent']:0)?>" /> <?php echo $wc_currency?>
+                            </div>
+
+                        </td>
+                        <td class="s2p-method-img-td"><img src="<?php echo $method_arr['logo_url']?>" class="s2p-method-img" /></td>
+                        <td>
+                            <strong><?php echo $method_arr['display_name']?></strong> (#<?php echo $method_arr['method_id']?>)<br/>
+                            <?php echo $method_arr['description']?>
+                        </td>
+                    </tr>
+                    <?php
+                }
+                ?></tbody></table><?php
+            }
+
+            ?>
             <script type="text/javascript">
                 jQuery(document).on( 'change', '#woocommerce_smart2pay_environment', function(e)
                 {

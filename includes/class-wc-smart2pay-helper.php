@@ -5,18 +5,36 @@ class WC_S2P_Helper
     const SQL_DATETIME = 'Y-m-d H:i:s', EMPTY_DATETIME = '0000-00-00 00:00:00';
     const SQL_DATE = 'Y-m-d', EMPTY_DATE = '0000-00-00';
 
-    public static function get_plugin_settings()
+    public static function get_plugin_settings( $key = false )
     {
         static $settings_arr = array();
 
         if( !empty( $settings_arr ) )
+        {
+            if( !empty( $key ) )
+            {
+                if( isset( $settings_arr[$key] ) )
+                    return $settings_arr[$key];
+
+                return null;
+            }
+
             return $settings_arr;
+        }
 
         WC_s2p()->init_smart2pay_gateway();
 
         $wc_s2p_gateway = new WC_Gateway_Smart2Pay();
 
         $settings_arr = $wc_s2p_gateway->settings;
+
+        if( !empty( $key ) )
+        {
+            if( isset( $settings_arr[$key] ) )
+                return $settings_arr[$key];
+
+            return null;
+        }
 
         return $settings_arr;
     }
@@ -29,7 +47,7 @@ class WC_S2P_Helper
 
         $time_diff = time() - $time;
 
-        if ( $time_diff > 0 && $time_diff < 24*60*60 )
+        if ( $time_diff >= 0 && $time_diff < 24*60*60 )
             $h_time = sprintf( WC_s2p()->__( '%s ago' ), human_time_diff( $time ) );
         else
             $h_time = mysql2date( 'Y/m/d', $m_time );
