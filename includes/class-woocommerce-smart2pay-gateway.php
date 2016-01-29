@@ -83,6 +83,9 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         if( !defined( 'S2P_SDK_VERSION' ) )
         {
             ?><span style="color:red;">NOT INSTALLED</span><?php
+        } elseif( version_compare( S2P_SDK_VERSION, '1.0.29', '<' ))
+        {
+            ?><span style="color:red;">NOT COMPATIBLE (1.0.29 or higher required)</span><?php
         } else
         {
             echo 'v'.S2P_SDK_VERSION;
@@ -111,6 +114,24 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             ?>
             <p class="submit"><input name="save" class="button-primary" type="submit" value="Save changes" /></p>
 
+            <div id="s2p_sync_protection" style="display: none; position: absolute; top: 0px; left: 0px; width: 100%; height: 100%; z-index: 10000;">
+                <div style="position: relative; width: 100%; height: 100%;">
+                    <div style="position: absolute; top: 0px; left: 0px; width: 100%; height: 100%; background: #333; opacity: 0.5; filter:alpha(opacity=50)"></div>
+                    <div style="position: absolute; top: 0px; left: 0px; width: 100%; height: 100%;">
+                        <div id="iframe-wrapper" style="position: fixed; display: table; margin: 0px auto; margin-top: 50px; width: 100%">
+                            <div style="margin: 0px auto; display: table;">
+
+                                <div id="s2p_loading_content" style="margin: 20% auto 0 auto; width:80%; background-color: white;border: 2px solid lightgrey; text-align: center; padding: 40px;">
+                                    <div class="ajax-loader" title="Loading..."></div>
+                                    <p style="margin: 20px auto;" id="s2p_protection_message">Syncronizing. Please wait...</p>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <a name="smart2pay_methods"></a>
             <h3>Payment Methods</h3>
             <?php
@@ -134,6 +155,11 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                     <span class="updated">
                     <p><strong>Payment methods syncronized with success.</strong></p>
                     </span>
+                    <script type="text/javascript">
+                    jQuery(document).ready(function() {
+                        clear_sync_parameters();
+                    });
+                    </script>
                     <?php
                 }
             }
@@ -166,21 +192,19 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 In order to obtain available payment methods for current plugin setup you will have to syncronize your database with our servers.
                 </p>
                 <p>
-                    <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_smart2pay&sync_methods=1' )?>#smart2pay_methods" class="button-primary">Syncronize Now</a>
+                    <a href="javascript:start_syncronization()" class="button-primary">Syncronize Now</a>
                 </p>
                 <?php
             } else
             {
                 ?>
                 <p>
-                    <a href="<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_smart2pay&sync_methods=1' )?>#smart2pay_methods" class="button-primary">Re-Syncronize Methods</a>
+                    <a href="javascript:start_syncronization()" class="button-primary">Re-Syncronize Methods</a>
                 </p>
 
                 <p style="margin-bottom: 0 !important;"><?php echo count( $methods_list_arr )?> payment methods currently available.</p>
 
                 <style>
-                .s2p-methods-row-active {}
-                .s2p-methods-row-inactive { background-color: lightgrey; color: #787878; }
                 .s2p-method-img { vertical-align: middle; max-height: 40px; max-width: 130px; }
                 .sp2-middle-all { text-align: center; vertical-align: middle; }
                 .s2p-method-img-td { height: 50px; width: 134px; text-align: center; }
@@ -237,6 +261,37 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 jQuery(document).ready(function() {
                     refresh_fields();
                 });
+
+                function show_protection( msg )
+                {
+                    var protection_container_obj = jQuery("#s2p_sync_protection");
+                    if( protection_container_obj )
+                    {
+                        protection_container_obj.appendTo('body');
+                        protection_container_obj.show();
+                        protection_container_obj.css({height: document.getElementsByTagName('html')[0].scrollHeight});
+                    }
+
+                    var protection_message_obj = jQuery("#s2p_protection_message");
+                    if( protection_message_obj )
+                    {
+                        protection_message_obj.html( msg );
+                    }
+                }
+
+                function start_syncronization()
+                {
+                    show_protection( 'Syncronizing. Please wait...' );
+
+                    document.location = '<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_smart2pay&sync_methods=1' )?>#smart2pay_methods';
+                }
+
+                function clear_sync_parameters()
+                {
+                    show_protection( 'Reloading page. Please wait...' );
+
+                    document.location = '<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_smart2pay' )?>#smart2pay_methods';
+                }
 
                 function refresh_fields()
                 {

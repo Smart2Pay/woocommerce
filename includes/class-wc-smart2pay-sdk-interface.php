@@ -100,7 +100,9 @@ class WC_S2P_SDK_Interface extends WC_S2P_Base
         $api_parameters['method'] = 'methods';
         $api_parameters['func'] = 'assigned_methods';
 
-        $api_parameters['get_variables'] = array();
+        $api_parameters['get_variables'] = array(
+            'additional_details' => true,
+        );
         $api_parameters['method_params'] = array();
 
         $call_params = array();
@@ -292,7 +294,21 @@ class WC_S2P_SDK_Interface extends WC_S2P_Base
 
             $saved_methods[$saved_method['method_id']] = $saved_method;
 
-            $this->update_db_method_details( $saved_method, $plugin_settings_arr );
+            if( !empty( $method_arr['countries'] ) and is_array( $method_arr['countries'] ) )
+            {
+                if( $methods_model->update_method_countries( $saved_method, $method_arr['countries'] ) === false )
+                {
+                    if( $methods_model->has_error() )
+                        $this->copy_error_from_array( $methods_model->get_error() );
+                    else
+                        $this->set_error( self::ERR_GENERIC, WC_s2p()->__( 'Error updating method countries.' ) );
+
+                    return false;
+                }
+            }
+
+            // Old way...
+            // $this->update_db_method_details( $saved_method, $plugin_settings_arr );
         }
 
         if( !($method_ids = array_keys( $saved_methods )) )
