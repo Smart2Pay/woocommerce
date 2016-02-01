@@ -6,6 +6,9 @@ class WC_S2P_SDK_Interface extends WC_S2P_Base
 
     const OPTION_METHODS_LAST_CHECK = 'wc_s2p_methods_last_check';
 
+    // After how many hours from last sync action is merchant allowed to sync methods again?
+    const RESYNC_AFTER_HOURS = 2;
+
     const DEMO_API_KEY = 'Pnn5D8KHj9cHOJwZqaQhiaOo5ScY0p2hA0vR6i/kTWCXKx5qt7',
           DEMO_SITE_ID = 30577,
           DEMO_SKIN_ID = 0;
@@ -90,7 +93,7 @@ class WC_S2P_SDK_Interface extends WC_S2P_Base
         if( empty( $plugin_settings_arr ) or !is_array( $plugin_settings_arr ) )
             $plugin_settings_arr = WC_S2P_Helper::get_plugin_settings();
 
-        if( !($api_credentials = $this->get_api_credentials()) )
+        if( !($api_credentials = $this->get_api_credentials( $plugin_settings_arr )) )
             return false;
 
         $api_parameters['api_key'] = $api_credentials['api_key'];
@@ -135,7 +138,7 @@ class WC_S2P_SDK_Interface extends WC_S2P_Base
 
         $method_id = intval( $method_id );
         if( empty( $method_id )
-         or !($api_credentials = $this->get_api_credentials()) )
+         or !($api_credentials = $this->get_api_credentials( $plugin_settings_arr )) )
             return false;
 
         $api_parameters['api_key'] = $api_credentials['api_key'];
@@ -223,11 +226,47 @@ class WC_S2P_SDK_Interface extends WC_S2P_Base
         return true;
     }
 
+    public function seconds_to_launch_sync( $plugin_settings_arr = false )
+    {
+        if( empty($plugin_settings_arr) or ! is_array( $plugin_settings_arr ) )
+            $plugin_settings_arr = WC_S2P_Helper::get_plugin_settings();
+
+        $resync_seconds = self::RESYNC_AFTER_HOURS * 1200;
+        $time_diff = 0;
+        if( ($last_sync_date = self::last_methods_sync_option( null, $plugin_settings_arr ))
+        and ($time_diff = abs( WC_S2P_Helper::seconds_passed( $last_sync_date ) )) > $resync_seconds )
+            return 0;
+
+        return $resync_seconds - $time_diff;
+   }
+
     public function refresh_available_methods( $plugin_settings_arr = false )
     {
         global $wpdb;
 
         $this->reset_error();
+
+        if( empty($plugin_settings_arr) or ! is_array( $plugin_settings_arr ) )
+            $plugin_settings_arr = WC_S2P_Helper::get_plugin_settings();
+
+        if( ($seconds_to_sync = $this->seconds_to_launch_sync( $plugin_settings_arr )) )
+        {
+            $hours_to_sync = floor( $seconds_to_sync / 1200 );
+            $minutes_to_sync = floor( ($seconds_to_sync - ($hours_to_sync * 1200)) / 60 );
+            $seconds_to_sync -= ($hours_to_sync * 1200) + ($minutes_to_sync * 60);
+
+            $sync_interval = '';
+            if( $hours_to_sync )
+                $sync_interval = $hours_to_sync.' hour(s)';
+
+            if( $hours_to_sync or $minutes_to_sync )
+                $sync_interval .= ($sync_interval!=''?', ':'').$minutes_to_sync.' minute(s)';
+
+            $sync_interval .= ($sync_interval!=''?', ':'').$seconds_to_sync.' seconds.';
+
+            $this->set_error( self::ERR_GENERIC, 'You can syncronize methods once every '.self::RESYNC_AFTER_HOURS.' hours. Time left: '.$sync_interval );
+            return false;
+        }
 
         /** @var WC_S2P_Methods_Model $methods_model */
         if( !($methods_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Methods_Model' )) )
