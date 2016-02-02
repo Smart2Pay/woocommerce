@@ -84,6 +84,18 @@ abstract class WC_S2P_Model extends WC_S2P_Base
     }
 
     /**
+     * @param array $edit_arr What fields are to be changed in database
+     * @param array $changes_arr "Old" values
+     * @param array $params Edit parameters
+     *
+     * @return array New edit parameters (fields to update which are conditional on other fields - eg. status_date which depends on status field change)
+     */
+    public function edit_trace_changes( $edit_arr, $changes_arr, $params )
+    {
+        return $edit_arr;
+    }
+
+    /**
      * Overwrite this method if you want to change data array right after saving it to database...
      * This function is called only if some fields were saved in database.
      *
@@ -222,6 +234,9 @@ abstract class WC_S2P_Model extends WC_S2P_Base
             return false;
         }
 
+        if( !isset( $params['trace_edit'] ) )
+            $params['trace_edit'] = true;
+
         if( !($primary_field = $this->get_primary()) )
         {
             $this->set_error( self::ERR_PARAMETERS, WC_s2p()->__( 'Table doesn\'t have a primary field defined.' ) );
@@ -261,10 +276,24 @@ abstract class WC_S2P_Model extends WC_S2P_Base
         if( isset( $edit_arr[$primary_field] ) )
             unset( $edit_arr[$primary_field] );
 
+        if( !empty( $params['trace_edit'] ) and count( $changes_arr ) )
+        {
+            if( ($new_edit = $this->edit_trace_changes( $edit_arr, $changes_arr, $params ))
+            and is_array( $new_edit ) )
+                $edit_arr = $new_edit;
+        }
+
         if( !empty( $edit_arr ) )
         {
-            if( !($sql = $this->quick_edit( $edit_arr ))
-             or !$wpdb->query( $sql . ' WHERE `' . $primary_field . '` = \'' . $existing_arr[$primary_field] . '\'' ) )
+            if( !($sql = $this->quick_edit( $edit_arr )) )
+            {
+                $this->set_error( self::ERR_PARAMETERS, WC_s2p()->__( 'Error creating update query.' ) );
+                return false;
+            }
+
+            $wpdb->query( $sql . ' WHERE `' . $primary_field . '` = \'' . $existing_arr[$primary_field] . '\'' );
+
+            if( !empty( $wpdb->last_error ) )
             {
                 $this->set_error( self::ERR_PARAMETERS, WC_s2p()->__( 'Error saving details in database.' ) );
                 return false;

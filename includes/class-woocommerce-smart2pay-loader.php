@@ -45,6 +45,7 @@ class Woocommerce_Smart2pay_Loader {
     // class name should be same case as class name (including namespace if required) in this array
     private $_models_arr = array(
         'WC_S2P_Methods_Model' => 'includes/class-model-methods.php',
+        'WC_S2P_Configured_Methods_Model' => 'includes/class-model-configured-methods.php',
     );
 
 	/**

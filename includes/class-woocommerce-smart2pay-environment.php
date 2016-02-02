@@ -36,7 +36,7 @@ class Woocommerce_Smart2pay_Environment
     public static function validEnvironment( $env )
     {
         $env = strtolower( trim( $env ) );
-        if( !in_array( $env, [ self::ENV_DEMO, self::ENV_TEST, self::ENV_LIVE ] ) )
+        if( !in_array( $env, array( self::ENV_DEMO, self::ENV_TEST, self::ENV_LIVE ) ) )
             return false;
 
         return $env;

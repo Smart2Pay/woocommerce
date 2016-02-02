@@ -1,6 +1,6 @@
 <?php
 
-define( 'WC_SMART2PAY_VERSION', '1.0.5' );
+define( 'WC_SMART2PAY_VERSION', '1.0.6' );
 
 /**
  * The plugin bootstrap file
@@ -11,14 +11,14 @@ define( 'WC_SMART2PAY_VERSION', '1.0.5' );
  * that starts the plugin.
  *
  * @link              http://www.smart2pay.com
- * @since             1.0.5
+ * @since             1.0.0
  * @package           Woocommerce_Smart2pay
  *
  * @wordpress-plugin
  * Plugin Name:       WooCommerce Smart2Pay
  * Plugin URI:        http://www.smart2pay.com/?woocommerce
  * Description:       Secure payments through 100+ alternative payment options.
- * Version:           1.0.0
+ * Version:           1.0.6
  * Author:            Smart2Pay
  * Author URI:        http://www.smart2pay.com
  * Developer:         Smart2Pay

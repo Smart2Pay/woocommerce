@@ -233,8 +233,8 @@ class WC_S2P_SDK_Interface extends WC_S2P_Base
 
         $resync_seconds = self::RESYNC_AFTER_HOURS * 1200;
         $time_diff = 0;
-        if( ($last_sync_date = self::last_methods_sync_option( null, $plugin_settings_arr ))
-        and ($time_diff = abs( WC_S2P_Helper::seconds_passed( $last_sync_date ) )) > $resync_seconds )
+        if( !($last_sync_date = self::last_methods_sync_option( null, $plugin_settings_arr ))
+         or ($time_diff = abs( WC_S2P_Helper::seconds_passed( $last_sync_date ) )) > $resync_seconds )
             return 0;
 
         return $resync_seconds - $time_diff;
@@ -309,7 +309,10 @@ class WC_S2P_SDK_Interface extends WC_S2P_Base
 
                 if( !($saved_method = $methods_model->edit( $existing_method_arr, $edit_arr )) )
                 {
-                    $this->set_error( self::ERR_GENERIC, WC_s2p()->__( 'Error saving method details in database.' ) );
+                    if( $methods_model->has_error() )
+                        $this->set_error( self::ERR_GENERIC, $methods_model->get_error_message() );
+                    else
+                        $this->set_error( self::ERR_GENERIC, WC_s2p()->__( 'Error saving method details in database.' ) );
                     return false;
                 }
 

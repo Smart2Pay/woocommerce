@@ -36,7 +36,7 @@ class Woocommerce_Smart2pay_Displaymode
     public static function validDisplayMode( $mode )
     {
         $mode = strtolower( trim( $mode ) );
-        if( !in_array( $mode, [ self::MODE_LOGO, self::MODE_TEXT, self::MODE_BOTH ] ) )
+        if( !in_array( $mode, array( self::MODE_LOGO, self::MODE_TEXT, self::MODE_BOTH ) ) )
             return false;
 
         return $mode;
