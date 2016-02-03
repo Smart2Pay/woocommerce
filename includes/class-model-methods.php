@@ -248,6 +248,66 @@ class WC_S2P_Methods_Model extends WC_S2P_Model
         return $return_arr;
     }
 
+    public function get_method_details_for_country( $method_id, $country, $environment = false )
+    {
+        global $wpdb;
+
+        $this->reset_error();
+
+        if( empty( $environment ) )
+            $environment = WC_S2P_Helper::get_plugin_settings( 'environment' );
+
+        $method_id = intval( $method_id );
+        if( empty( $method_id )
+         or empty( $country ) or strlen( $country ) != 2
+         or !Woocommerce_Smart2pay_Environment::validEnvironment( $environment ) )
+            return false;
+
+        $table_name = $wpdb->prefix.'smart2pay_method_countries';
+        $table_index = 'id';
+
+        $params_arr = array();
+        $params_arr['table_name'] = $table_name;
+        $params_arr['table_index'] = $table_index;
+
+        $check_arr = array();
+        $check_arr['country_code'] = strtoupper( $country );
+        $check_arr['method_id'] = $method_id;
+
+        if( !($country_methods_arr = $this->get_details_fields( $check_arr, $params_arr ))
+         or !is_array( $country_methods_arr ) )
+            return false;
+
+        $table_name = $wpdb->prefix.'smart2pay_method_settings';
+        $table_index = 'id';
+
+        $list_arr = array();
+        $list_arr['table_name'] = $table_name;
+        $list_arr['table_index'] = $table_index;
+
+        $list_arr['fields'][$table_name.'.enabled'] = 1;
+        $list_arr['fields'][$wpdb->prefix.'smart2pay_method.active'] = 1;
+        $list_arr['fields'][$table_name.'.environment'] = $environment;
+        $list_arr['fields'][$table_name.'.method_id'] = $method_id;
+
+        $list_arr['offset'] = 0;
+        $list_arr['enregs_no'] = 1;
+
+        $list_arr['db_fields'] = $table_name.'.*'.
+                                 ', '.$wpdb->prefix.'smart2pay_method.display_name as display_name '.
+                                 ', '.$wpdb->prefix.'smart2pay_method.description as description '.
+                                 ', '.$wpdb->prefix.'smart2pay_method.logo_url as logo_url ';
+
+        $list_arr['join_sql'] = ' LEFT JOIN '.$wpdb->prefix.'smart2pay_method ON `'.$table_name.'`.method_id = '.$wpdb->prefix.'smart2pay_method.method_id ';
+
+        if( !($available_methods_arr = $this->get_list( $list_arr ))
+         or !is_array( $available_methods_arr )
+         or !($method_details_arr = array_pop( $available_methods_arr )) )
+            return false;
+
+        return $method_details_arr;
+    }
+
     public function get_table_fields()
     {
         return array(

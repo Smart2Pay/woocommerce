@@ -36,12 +36,17 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         // Displaying Payment Methods in Plugin settings page
         add_action( 'woocommerce_admin_field_smart2pay_methods', array( $this, 'smart2pay_methods_settings' ) );
 
+        add_action( 'woocommerce_cart_calculate_fees', array( $this, 'add_cart_fees' ) );
+
         //add_action( 'woocommerce_thankyou_cheque', array( $this, 'thankyou_page' ) );
 
         // Customer Emails
         //add_action( 'woocommerce_email_before_order_table', array( $this, 'email_instructions' ), 10, 3 );
     }
 
+    //
+    //  Begin Admin stuff
+    //
     public function save_payment_details()
     {
         $this->errors = array();
@@ -263,6 +268,46 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
     }
 
     /**
+     * Add surcharges or other fees in cart
+     *
+     * @param WC_Cart $cart
+     */
+    public function add_cart_fees( $cart )
+    {
+        echo 'ADD FEEE!!!!';
+
+        /** @var WC_S2P_Methods_Model $methods_model */
+        if( is_admin() and !defined( 'DOING_AJAX' )
+         or empty( WC()->checkout()->posted )
+         or empty( WC()->checkout()->posted['payment_method'] )
+         or WC()->checkout()->posted['payment_method'] != $this->id
+         or empty( $this->settings['environment'] )
+         or !Woocommerce_Smart2pay_Environment::validEnvironment( $this->settings['environment'] )
+         or !($s2p_method = PHS_params::_p( 's2p_method', PHS_params::T_INT ))
+         or empty( WC()->customer )
+         or empty( WC()->customer->country )
+         or !($country = WC()->customer->country)
+         or !($methods_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Methods_Model' ))
+         or !($method_details_arr = $methods_model->get_method_details_for_country( $s2p_method, $country, $this->settings['environment'] ))
+         or (
+                (empty( $method_details_arr['surcharge_percent'] ) or !(float)$method_details_arr['surcharge_percent'])
+                and
+                (empty( $method_details_arr['surcharge_amount'] ) or !(float)$method_details_arr['surcharge_amount'])
+            ) )
+        {
+            echo 'canci!!!';
+            return;
+        }
+
+        $percentage = (float)$method_details_arr['surcharge_percent'];
+        $surcharge = ( WC()->cart->cart_contents_total + WC()->cart->shipping_total ) * $percentage + (float)$method_details_arr['surcharge_amount'];
+
+        echo 'Surcharge ['.$surcharge.']';
+
+        WC()->cart->add_fee( 'Payment Method Surcharge', $surcharge, false, '' );
+    }
+
+    /**
      * If There are no payment fields show the description if set.
      * Override this in your gateway if you have some.
      */
@@ -286,18 +331,136 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 
         if( !empty( $methods_list_arr ) )
         {
-            ?><ul><?php
+            $show_in_grid = (!empty( $this->settings['show_methods_in_grid'] ) and $this->settings['show_methods_in_grid'] == 'yes');
+            $display_surcharge = (!empty( $this->settings['display_surcharge'] ) and $this->settings['display_surcharge'] == 'yes');
+            $grid_column_number = ((empty( $this->settings['grid_column_number'] ) or $this->settings['grid_column_number'] > 3)?3:$this->settings['grid_column_number']);
+
+            if( $show_in_grid )
+                echo 'Showing methods in grid';
+            else
+                echo 'Showing methods in normal mode...';
+
+            ?>
+            <style>
+            .smart2pay_payment_table, .smart2pay_payment_table td { border: 0px !important; }
+            .smart2pay_payment_table td { border-bottom: 1px solid #909090 !important; }
+            .s2p-method-logo-name { width: <?php echo ($show_in_grid?'100%':'130px')?>; margin: 0 5px 5px 0 !important; text-align: center !important; vertical-align: top !important; float: left; display: table; }
+            .s2p-method-img { padding: 2px !important; margin: 2px !important; border: 1px solid black !important; max-width: 120px; }
+            .s2p-method-name { font-weight: bold; }
+            .s2p-method-description { padding: 2px !important; }
+            </style>
+            <table class="smart2pay_payment_table"><?php
+            $methods_in_row = 0;
             foreach( $methods_list_arr as $method_id => $method_arr )
             {
-                ?><li><?php echo $method_arr['display_name']?></li><?php
-            }
-            ?></ul><?php
-        }
+                // var_dump( $method_arr );
+                // id, method_id, environment, enabled, surcharge_percent, surcharge_amount, surcharge_currency,
+                // priority, last_update, configured, display_name, description, logo_url
+                $surcharge_explained_str = '';
+                if( $display_surcharge
+                and ((float) $method_arr['surcharge_percent'] != 0 or (float) $method_arr['surcharge_amount'] != 0) )
+                {
+                    $surcharge_explained_str = ' (';
 
-        echo '<pre>';
-        //var_dump( WC()->customer->country );
-        var_dump( $methods_list_arr );
-        echo '</pre>';
+                    if( (float) $method_arr['surcharge_percent'] != 0 )
+                        $surcharge_explained_str .= ($method_arr['surcharge_percent'] > 0 ? '+' : '') . $method_arr['surcharge_percent'] . '%';
+                    if( (float) $method_arr['surcharge_amount'] != 0 )
+                        $surcharge_explained_str .= ((float) $method_arr['surcharge_amount'] != 0 ? ' + ' : '') . wc_price( $method_arr['surcharge_amount'], array( 'currency' => $method_arr['surcharge_currency'] ) );
+
+                    $surcharge_explained_str .= ')';
+                }
+
+                if( $show_in_grid )
+                {
+                    if( !$methods_in_row )
+                        echo '<tr>';
+
+                    ?>
+                    <td style="vertical-align: top !important;"><label style="width: 100%;" for="s2p-method-chck-<?php echo $method_arr['method_id'] ?>">
+                        <div class="s2p-method-logo-name">
+                        <input type="radio" name="s2p_method" id="s2p-method-chck-<?php echo $method_arr['method_id'] ?>" value="<?php echo $method_arr['method_id'] ?>" onfocus="this.blur()" /><br/>
+                        <?php
+
+                            if( $this->settings['methods_display_mode'] == Woocommerce_Smart2pay_Displaymode::MODE_LOGO
+                                or $this->settings['methods_display_mode'] == Woocommerce_Smart2pay_Displaymode::MODE_BOTH )
+                            {
+                                ?><img class="s2p-method-img" alt="<?php echo $method_arr['display_name'] ?>" src="<?php echo $method_arr['logo_url'] ?>"/><?php
+                            }
+
+                            if( $this->settings['methods_display_mode'] == Woocommerce_Smart2pay_Displaymode::MODE_TEXT
+                                or $this->settings['methods_display_mode'] == Woocommerce_Smart2pay_Displaymode::MODE_BOTH )
+                            {
+                                if( $this->settings['methods_display_mode'] == Woocommerce_Smart2pay_Displaymode::MODE_BOTH )
+                                    echo '<br/>';
+
+                                ?><span class="s2p-method-name"><?php echo $method_arr['display_name'] ?></span><?php
+                            }
+
+                            if( $surcharge_explained_str != '' )
+                                echo '<br/><small>' . $surcharge_explained_str . '</small>';
+
+                        ?>
+                        </div>
+
+                    </label></td>
+                    <?php
+
+                    if( $methods_in_row+1 == $grid_column_number )
+                    {
+                        echo '</tr>';
+                        $methods_in_row = -1;
+                    }
+
+                    $methods_in_row++;
+                } else
+                {
+                    ?>
+                    <tr>
+                        <td style="width:25px; vertical-align: middle;">
+                            <input type="radio" name="s2p_method" id="s2p-method-chck-<?php echo $method_arr['method_id'] ?>" value="<?php echo $method_arr['method_id'] ?>" onfocus="this.blur()"/>
+                        </td>
+                        <td><label style="width: 100%;" for="s2p-method-chck-<?php echo $method_arr['method_id'] ?>">
+                            <div class="s2p-method-logo-name">
+                            <?php
+                            if( $this->settings['methods_display_mode'] == Woocommerce_Smart2pay_Displaymode::MODE_LOGO
+                             or $this->settings['methods_display_mode'] == Woocommerce_Smart2pay_Displaymode::MODE_BOTH )
+                            {
+                                ?><img class="s2p-method-img" alt="<?php echo $method_arr['display_name'] ?>" src="<?php echo $method_arr['logo_url'] ?>"/><?php
+                            }
+
+                            if( $this->settings['methods_display_mode'] == Woocommerce_Smart2pay_Displaymode::MODE_TEXT
+                             or $this->settings['methods_display_mode'] == Woocommerce_Smart2pay_Displaymode::MODE_BOTH )
+                            {
+                                if( $this->settings['methods_display_mode'] == Woocommerce_Smart2pay_Displaymode::MODE_BOTH )
+                                    echo '<br/>';
+
+                                ?><span class="s2p-method-name"><?php echo $method_arr['display_name'] ?></span><?php
+                            }
+
+                            if( $surcharge_explained_str != '' )
+                                echo '<br/><small>' . $surcharge_explained_str . '</small>';
+
+                            ?>
+                            </div>
+                            <div class="s2p-method-description"><?php echo $method_arr['description'] ?></div>
+                        </label></td>
+                    </tr>
+                    <?php
+                }
+            }
+
+            if( $show_in_grid
+            and $methods_in_row )
+            {
+                while( $methods_in_row < $grid_column_number )
+                {
+                    echo '<td>&nbsp;</td>';
+                    $methods_in_row++;
+                }
+            }
+
+            ?></table><?php
+        }
     }
 
     /**
@@ -309,6 +472,50 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
      */
     public function validate_fields()
     {
+        if( empty( WC()->checkout()->posted )
+         or empty( WC()->checkout()->posted['payment_method'] )
+         or WC()->checkout()->posted['payment_method'] != $this->id )
+            return false;
+
+        if( empty( $this->settings['environment'] )
+         or !Woocommerce_Smart2pay_Environment::validEnvironment( $this->settings['environment'] ) )
+        {
+            wc_add_notice( WC_s2p()->__( 'Invalid environment setup for Smart2Pay plugin.' ), 'error' );
+            return false;
+        }
+
+        $s2p_method = PHS_params::_p( 's2p_method', PHS_params::T_INT );
+        if( empty( $s2p_method ) )
+        {
+            wc_add_notice( WC_s2p()->__( 'Please select a payment method first.' ), 'error' );
+            return false;
+        }
+
+        if( empty( WC()->customer )
+         or empty( WC()->customer->country ) )
+        {
+            wc_add_notice( WC_s2p()->__( 'Please select a country first.' ), 'error' );
+            return false;
+        }
+
+        /** @var WC_S2P_Methods_Model $methods_model */
+        $country = WC()->customer->country;
+        if( !($methods_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Methods_Model' ))
+         or !($method_details_arr = $methods_model->get_method_details_for_country( $s2p_method, $country, $this->settings['environment'] )) )
+        {
+            wc_add_notice( WC_s2p()->__( 'Couldn\'t get payment method details.' ), 'error' );
+            return false;
+        }
+
+        ob_start();
+        var_dump( $_POST );
+        echo '<hr/>';
+        var_dump( WC()->checkout()->posted );
+        echo '<hr/>';
+        var_dump( $method_details_arr );
+        $buf = ob_get_clean();
+
+        wc_add_notice( '['.$buf.']', 'error' );
     }
 
     /**
@@ -550,176 +757,174 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 
             ?>
             <script type="text/javascript">
-                jQuery(document).on( 'change', '#woocommerce_smart2pay_environment', function(e)
-                {
-                    refresh_fields();
-                });
+            jQuery(document).on( 'change', '#woocommerce_smart2pay_environment', function(e)
+            {
+                refresh_fields();
+            });
 
-                jQuery(document).ready(function() {
-                    refresh_fields();
-                });
+            jQuery(document).ready(function() {
+                refresh_fields();
+            });
 
-                function hide_protection()
+            function hide_protection()
+            {
+                var protection_container_obj = jQuery("#s2p_sync_protection");
+                if( protection_container_obj )
                 {
-                    var protection_container_obj = jQuery("#s2p_sync_protection");
-                    if( protection_container_obj )
-                    {
-                        protection_container_obj.hide();
-                    }
+                    protection_container_obj.hide();
+                }
+            }
+
+            function show_protection( msg )
+            {
+                var protection_container_obj = jQuery("#s2p_sync_protection");
+                if( protection_container_obj )
+                {
+                    protection_container_obj.appendTo('body');
+                    protection_container_obj.show();
+                    protection_container_obj.css({height: document.getElementsByTagName('html')[0].scrollHeight});
                 }
 
-                function show_protection( msg )
+                var protection_message_obj = jQuery("#s2p_protection_message");
+                if( protection_message_obj )
                 {
-                    var protection_container_obj = jQuery("#s2p_sync_protection");
-                    if( protection_container_obj )
-                    {
-                        protection_container_obj.appendTo('body');
-                        protection_container_obj.show();
-                        protection_container_obj.css({height: document.getElementsByTagName('html')[0].scrollHeight});
-                    }
-
-                    var protection_message_obj = jQuery("#s2p_protection_message");
-                    if( protection_message_obj )
-                    {
-                        protection_message_obj.html( msg );
-                    }
+                    protection_message_obj.html( msg );
                 }
+            }
 
-                function start_syncronization()
+            function start_syncronization()
+            {
+                show_protection( 'Syncronizing. Please wait...' );
+
+                document.location = '<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_smart2pay&sync_methods=1' )?>&_r=' + Math.random() + '#smart2pay_methods';
+            }
+
+            function clear_sync_parameters()
+            {
+                show_protection( 'Reloading page. Please wait...' );
+
+                document.location = '<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_smart2pay' )?>&_r=' + Math.random() + '#smart2pay_methods';
+            }
+
+            function refresh_fields()
+            {
+                var current_val = jQuery('#woocommerce_smart2pay_environment').val();
+
+                if( current_val == '<?php echo Woocommerce_Smart2pay_Environment::ENV_TEST ?>' )
                 {
-                    show_protection( 'Syncronizing. Please wait...' );
-
-                    document.location = '<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_smart2pay&sync_methods=1' )?>&_r=' + Math.random() + '#smart2pay_methods';
+                    s2p_test_elements( true );
+                    s2p_live_elements( false );
+                } else if( current_val == '<?php echo Woocommerce_Smart2pay_Environment::ENV_LIVE ?>' )
+                {
+                    s2p_test_elements( false );
+                    s2p_live_elements( true );
+                } else
+                {
+                    s2p_test_elements( false );
+                    s2p_live_elements( false );
                 }
+            }
 
-                function clear_sync_parameters()
+            function s2p_live_elements( show )
+            {
+                var apikey_obj = jQuery('#woocommerce_smart2pay_api_key_live');
+                if( apikey_obj )
                 {
-                    show_protection( 'Reloading page. Please wait...' );
-
-                    document.location = '<?php echo admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_smart2pay' )?>&_r=' + Math.random() + '#smart2pay_methods';
+                    if( show )
+                        apikey_obj.parent().parent().parent().show();
+                    else
+                        apikey_obj.parent().parent().parent().hide();
                 }
-
-                function refresh_fields()
+                var site_id_obj = jQuery('#woocommerce_smart2pay_site_id_live');
+                if( site_id_obj )
                 {
-                    var current_val = jQuery('#woocommerce_smart2pay_environment').val();
-
-                    if( current_val == '<?php echo Woocommerce_Smart2pay_Environment::ENV_TEST ?>' )
-                    {
-                        s2p_test_elements( true );
-                        s2p_live_elements( false );
-                    } else if( current_val == '<?php echo Woocommerce_Smart2pay_Environment::ENV_LIVE ?>' )
-                    {
-                        s2p_test_elements( false );
-                        s2p_live_elements( true );
-                    } else
-                    {
-                        s2p_test_elements( false );
-                        s2p_live_elements( false );
-                    }
+                    if( show )
+                        site_id_obj.parent().parent().parent().show();
+                    else
+                        site_id_obj.parent().parent().parent().hide();
                 }
-
-                function s2p_live_elements( show )
+                var skin_id_obj = jQuery('#woocommerce_smart2pay_skin_id_live');
+                if( skin_id_obj )
                 {
-                    var apikey_obj = jQuery('#woocommerce_smart2pay_api_key_live');
-                    if( apikey_obj )
-                    {
-                        if( show )
-                            apikey_obj.parent().parent().parent().show();
-                        else
-                            apikey_obj.parent().parent().parent().hide();
-                    }
-                    var site_id_obj = jQuery('#woocommerce_smart2pay_site_id_live');
-                    if( site_id_obj )
-                    {
-                        if( show )
-                            site_id_obj.parent().parent().parent().show();
-                        else
-                            site_id_obj.parent().parent().parent().hide();
-                    }
-                    var skin_id_obj = jQuery('#woocommerce_smart2pay_skin_id_live');
-                    if( skin_id_obj )
-                    {
-                        if( show )
-                            skin_id_obj.parent().parent().parent().show();
-                        else
-                            skin_id_obj.parent().parent().parent().hide();
-                    }
+                    if( show )
+                        skin_id_obj.parent().parent().parent().show();
+                    else
+                        skin_id_obj.parent().parent().parent().hide();
                 }
+            }
 
-                function s2p_test_elements( show )
+            function s2p_test_elements( show )
+            {
+                var apikey_obj = jQuery('#woocommerce_smart2pay_api_key_test');
+                if( apikey_obj )
                 {
-                    var apikey_obj = jQuery('#woocommerce_smart2pay_api_key_test');
-                    if( apikey_obj )
-                    {
-                        if( show )
-                            apikey_obj.parent().parent().parent().show();
-                        else
-                            apikey_obj.parent().parent().parent().hide();
-                    }
-                    var site_id_obj = jQuery('#woocommerce_smart2pay_site_id_test');
-                    if( site_id_obj )
-                    {
-                        if( show )
-                            site_id_obj.parent().parent().parent().show();
-                        else
-                            site_id_obj.parent().parent().parent().hide();
-                    }
-                    var skin_id_obj = jQuery('#woocommerce_smart2pay_skin_id_test');
-                    if( skin_id_obj )
-                    {
-                        if( show )
-                            skin_id_obj.parent().parent().parent().show();
-                        else
-                            skin_id_obj.parent().parent().parent().hide();
-                    }
+                    if( show )
+                        apikey_obj.parent().parent().parent().show();
+                    else
+                        apikey_obj.parent().parent().parent().hide();
                 }
-
-                function s2p_config_js_select_all()
+                var site_id_obj = jQuery('#woocommerce_smart2pay_site_id_test');
+                if( site_id_obj )
                 {
-                    form_obj = document.getElementById( 'mainform' );
-                    if( form_obj && form_obj.elements && form_obj.elements.length )
+                    if( show )
+                        site_id_obj.parent().parent().parent().show();
+                    else
+                        site_id_obj.parent().parent().parent().hide();
+                }
+                var skin_id_obj = jQuery('#woocommerce_smart2pay_skin_id_test');
+                if( skin_id_obj )
+                {
+                    if( show )
+                        skin_id_obj.parent().parent().parent().show();
+                    else
+                        skin_id_obj.parent().parent().parent().hide();
+                }
+            }
+
+            function s2p_config_js_select_all()
+            {
+                form_obj = document.getElementById( 'mainform' );
+                if( form_obj && form_obj.elements && form_obj.elements.length )
+                {
+                    for( i = 0; i < form_obj.elements.length; i++ )
                     {
-                        for( i = 0; i < form_obj.elements.length; i++ )
+                        if( form_obj.elements[i].type == 'checkbox' && form_obj.elements[i].name.substring( 0, 20 ) == 's2p_enabled_methods[' )
                         {
-                            if( form_obj.elements[i].type == 'checkbox' && form_obj.elements[i].name.substring( 0, 20 ) == 's2p_enabled_methods[' )
-                            {
-                                if( !form_obj.elements[i].checked )
-                                    form_obj.elements[i].click();
-                            }
-                        }
-                    }
-                }
-                function s2p_config_js_deselect_all()
-                {
-                    form_obj = document.getElementById( 'mainform' );
-                    if( form_obj && form_obj.elements && form_obj.elements.length )
-                    {
-                        for( i = 0; i < form_obj.elements.length; i++ )
-                        {
-                            if( form_obj.elements[i].type == 'checkbox' && form_obj.elements[i].name.substring( 0, 20 ) == 's2p_enabled_methods[' )
-                            {
-                                if( form_obj.elements[i].checked )
-                                    form_obj.elements[i].click();
-                            }
-                        }
-                    }
-                }
-                function s2p_config_js_invert()
-                {
-                    form_obj = document.getElementById( 'mainform' );
-                    if( form_obj && form_obj.elements && form_obj.elements.length )
-                    {
-                        for( i = 0; i < form_obj.elements.length; i++ )
-                        {
-                            if( form_obj.elements[i].type == 'checkbox' && form_obj.elements[i].name.substring( 0, 20 ) == 's2p_enabled_methods[' )
-                            {
+                            if( !form_obj.elements[i].checked )
                                 form_obj.elements[i].click();
-                            }
                         }
                     }
                 }
-
-
+            }
+            function s2p_config_js_deselect_all()
+            {
+                form_obj = document.getElementById( 'mainform' );
+                if( form_obj && form_obj.elements && form_obj.elements.length )
+                {
+                    for( i = 0; i < form_obj.elements.length; i++ )
+                    {
+                        if( form_obj.elements[i].type == 'checkbox' && form_obj.elements[i].name.substring( 0, 20 ) == 's2p_enabled_methods[' )
+                        {
+                            if( form_obj.elements[i].checked )
+                                form_obj.elements[i].click();
+                        }
+                    }
+                }
+            }
+            function s2p_config_js_invert()
+            {
+                form_obj = document.getElementById( 'mainform' );
+                if( form_obj && form_obj.elements && form_obj.elements.length )
+                {
+                    for( i = 0; i < form_obj.elements.length; i++ )
+                    {
+                        if( form_obj.elements[i].type == 'checkbox' && form_obj.elements[i].name.substring( 0, 20 ) == 's2p_enabled_methods[' )
+                        {
+                            form_obj.elements[i].click();
+                        }
+                    }
+                }
+            }
             </script>
             <?php
         }

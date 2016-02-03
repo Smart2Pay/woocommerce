@@ -381,7 +381,7 @@ abstract class WC_S2P_Model extends WC_S2P_Base
             if( !is_array( $field_val ) )
             {
                 if( $field_val !== false )
-                    $params['extra_sql'] .= (!empty( $params['extra_sql'] )?' '.$linkage_func.' ':'').' '.$field_name.' = \''.$wpdb->_escape( $field_val ).'\' ';
+                    $params['extra_sql'] .= (!empty( $params['extra_sql'] )?' '.$linkage_func.' ':'').' '.$field_name.' = \''.self::prepare_data( $wpdb->_escape( $field_val ) ).'\' ';
             } else
             {
                 if( empty( $field_val['field'] ) )
@@ -397,7 +397,7 @@ abstract class WC_S2P_Model extends WC_S2P_Base
                     if( in_array( strtolower( $field_val['check'] ), array( 'in', 'is', 'between' ) ) )
                         $check_value = $field_val['value'];
                     else
-                        $check_value = '\''.$wpdb->_escape( $field_val['value'] ).'\'';
+                        $check_value = '\''.self::prepare_data( $wpdb->_escape( $field_val['value'] ) ).'\'';
 
                     $params['extra_sql'] .= (!empty( $params['extra_sql'] )?' '.$linkage_func.' ':'').' '.$field_val['field'].' '.$field_val['check'].' '.$check_value.' ';
                 }
@@ -564,14 +564,16 @@ abstract class WC_S2P_Model extends WC_S2P_Base
             $params = array();
 
         if( empty( $params['table_name'] ) )
-            $table_name = $this->get_table();
-        else
-            $table_name = $params['table_name'];
+            $params['table_name'] = $this->get_table();
+        if( empty( $params['table_index'] ) )
+            $params['table_index'] = $this->get_primary();
 
         if( empty( $constrain_arr ) or !is_array( $constrain_arr )
-         or empty( $table_name )
-         or !($table_index = $this->get_primary()) )
+         or empty( $params['table_name'] ) or empty( $params['table_index'] ) )
             return false;
+
+        $table_name = $params['table_name'];
+        $table_index = $params['table_index'];
 
         if( empty( $params['details'] ) )
             $params['details'] = '*';
@@ -605,7 +607,7 @@ abstract class WC_S2P_Model extends WC_S2P_Base
             if( !is_array( $field_val ) )
             {
                 if( $field_val !== false )
-                    $params['extra_sql'] .= (!empty( $params['extra_sql'] )?' AND ':'').' '.$field_name.' = \''.$wpdb->_escape( $field_val ).'\' ';
+                    $params['extra_sql'] .= (!empty( $params['extra_sql'] )?' AND ':'').' '.$field_name.' = \''.self::prepare_data( $wpdb->_escape( $field_val ) ).'\' ';
             } else
             {
                 if( empty( $field_val['field'] ) )
@@ -621,7 +623,7 @@ abstract class WC_S2P_Model extends WC_S2P_Base
                     if( in_array( strtolower( $field_val['check'] ), array( 'in', 'is' ) ) )
                         $check_value = $field_val['value'];
                     else
-                        $check_value = '\''.$wpdb->_escape( $field_val['value'] ).'\'';
+                        $check_value = '\''.self::prepare_data( $wpdb->_escape( $field_val['value'] ) ).'\'';
 
                     $params['extra_sql'] .= (!empty( $params['extra_sql'] )?' AND ':'').' '.$field_val['field'].' '.$field_val['check'].' '.$check_value.' ';
                 }
@@ -660,7 +662,7 @@ abstract class WC_S2P_Model extends WC_S2P_Base
 
         $id = intval( $id );
         if( empty( $id )
-         or !($item_arr = $wpdb->get_row( 'SELECT '.$params['details'].' FROM `'.$table_name.'` WHERE `'.$primary_field.'` = \''.$wpdb->_escape( $id ).'\'', ARRAY_A )) )
+         or !($item_arr = $wpdb->get_row( 'SELECT '.$params['details'].' FROM `'.$table_name.'` WHERE `'.$primary_field.'` = \''.self::prepare_data( $wpdb->_escape( $id ) ).'\'', ARRAY_A )) )
             return false;
 
         return $item_arr;
