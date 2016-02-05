@@ -69,6 +69,9 @@ class Woocommerce_Smart2pay
 	 */
 	protected $version;
 
+    /** @var WC_S2P_Logs */
+    protected $logger = null;
+
 	/**
 	 * Define the core functionality of the plugin.
 	 *
@@ -181,17 +184,88 @@ class Woocommerce_Smart2pay
 
 		require_once $this->plugin_path() . 'includes/class-wc-smart2pay-sdk-interface.php';
 
+		require_once $this->plugin_path() . 'includes/class-wc-smart2pay-server-notifications.php';
+
 		Woocommerce_Smart2pay_Installer::init();
 
 		$this->loader = new Woocommerce_Smart2pay_Loader();
 
 		$this->loader->add_filter( 'woocommerce_payment_gateways', $this, 'register_smart2pay_gateway' );
 		$this->loader->add_action( 'plugins_loaded', $this, 'init_smart2pay_gateway' );
+
+        add_action( 'woocommerce_api_'.strtolower( WC_S2P_Helper::NOTIFICATION_ENTRY_POINT ), array( 'WC_S2P_Server_Notifications', 'notification_entry_point' ) );
+
+        // Payment gateway is initiated after fees calculation...
+        add_action( 'woocommerce_cart_calculate_fees', array( $this, 'add_cart_fees' ) );
 	}
 
     public function init_smart2pay_gateway()
     {
         require_once $this->plugin_path() . 'includes/class-woocommerce-smart2pay-gateway.php';
+    }
+
+    public function session_s2p_method( $method_id = null )
+    {
+        if( $method_id === null )
+            return WC()->session->get( 's2p_method', 0 );
+
+        $method_id = intval( $method_id );
+        WC()->session->set( 's2p_method', $method_id );
+
+        return $method_id;
+    }
+
+    /**
+     * Add surcharges or other fees in cart
+     *
+     * @param WC_Cart $cart
+     */
+    public function add_cart_fees( $cart )
+    {
+        WC_s2p()->logger()->log( 'Fee from: '.WC_S2P_Helper::debug_call_backtrace() );
+
+        if( !is_checkout() )
+            return;
+
+        $posted_arr = array();
+        if( !empty( $_POST['post_data'] ) )
+            parse_str( $_POST['post_data'], $posted_arr );
+
+        $s2p_method = 0;
+        if( !empty( $posted_arr['s2p_method'] ) )
+            $s2p_method = intval( $posted_arr['s2p_method'] );
+        elseif( !($s2p_method = $this->session_s2p_method()) )
+            $s2p_method = 0;
+
+        /** @var WC_S2P_Methods_Model $methods_model */
+        if( !($payment_method = PHS_params::_p( 'payment_method', PHS_params::T_NOHTML ))
+         or !($wc_s2p_gateway = WC_S2P_Helper::get_plugin_gateway_object())
+         or $payment_method != $wc_s2p_gateway->id
+         or empty( $wc_s2p_gateway->settings['environment'] )
+         or !Woocommerce_Smart2pay_Environment::validEnvironment( $wc_s2p_gateway->settings['environment'] )
+         or !$s2p_method
+         or empty( WC()->customer )
+         or empty( WC()->customer->country )
+         or !($country = WC()->customer->country)
+         or !($methods_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Methods_Model' ))
+         or !($method_details_arr = $methods_model->get_method_details_for_country( $s2p_method, $country, $wc_s2p_gateway->settings['environment'] ))
+         or (
+             (empty( $method_details_arr['surcharge_percent'] ) or !(float)$method_details_arr['surcharge_percent'])
+             and
+             (empty( $method_details_arr['surcharge_amount'] ) or !(float)$method_details_arr['surcharge_amount'])
+         )
+        )
+        {
+            $this->session_s2p_method( 0 );
+            return;
+        }
+
+        $this->session_s2p_method( $s2p_method );
+
+        $percentage = (float)$method_details_arr['surcharge_percent'];
+        $surcharge = (WC()->cart->cart_contents_total + WC()->cart->shipping_total) * $percentage / 100 + (float)$method_details_arr['surcharge_amount'];
+
+        WC()->cart->add_fee( 'Payment Method Surcharge', $surcharge, false, '' );
     }
 
     public function register_smart2pay_gateway( $load_gateways )
@@ -252,6 +326,19 @@ class Woocommerce_Smart2pay
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
 
 	}
+
+    public function logger()
+    {
+        if( !empty( $this->logger ) )
+            return $this->logger;
+
+        require_once $this->plugin_path() . 'includes/class-model-logs.php';
+
+        if( !($this->logger = new WC_S2P_Logs()) )
+            $this->logger = null;
+
+        return $this->logger;
+    }
 
 	/**
 	 * Run the loader to execute all of the hooks with WordPress.

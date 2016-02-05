@@ -4,6 +4,19 @@ class WC_S2P_Helper
 {
     const SQL_DATETIME = 'Y-m-d H:i:s', EMPTY_DATETIME = '0000-00-00 00:00:00';
     const SQL_DATE = 'Y-m-d', EMPTY_DATE = '0000-00-00';
+    const NOTIFICATION_ENTRY_POINT = 'WC_Gateway_Smart2Pay';
+
+    public static function notification_url()
+    {
+        return str_replace( 'https:', 'http:', add_query_arg( 'wc-api', self::NOTIFICATION_ENTRY_POINT, home_url( '/' ) ) );
+    }
+
+    public static function get_plugin_gateway_object()
+    {
+        WC_s2p()->init_smart2pay_gateway();
+
+        return new WC_Gateway_Smart2Pay();
+    }
 
     public static function get_plugin_settings( $key = false )
     {
@@ -22,9 +35,8 @@ class WC_S2P_Helper
             return $settings_arr;
         }
 
-        WC_s2p()->init_smart2pay_gateway();
-
-        $wc_s2p_gateway = new WC_Gateway_Smart2Pay();
+        if( !($wc_s2p_gateway = self::get_plugin_gateway_object()) )
+            return null;
 
         $settings_arr = $wc_s2p_gateway->settings;
 
@@ -167,18 +179,33 @@ class WC_S2P_Helper
         return $return_arr;
     }
 
-    public static function get_slug_page_url( $slug )
+    public static function get_slug_page_url( $slug, $args = false )
     {
-        $args = array(
-            'name' => $slug,
-            'post_type' => 'page',
-        );
+        if( empty( $args ) or !is_array( $args ) )
+            $args = array();
+
+        $args = array_merge( $args, array(
+                                'name' => $slug,
+                                'post_type' => 'page',
+                            ) );
 
         if( ($posts_arr = self::find_articles( $args ))
         and !empty( $posts_arr['first_link'] ) )
             return $posts_arr['first_link'];
 
         return '';
+    }
+
+    public static function get_slug_internal_page_url( $slug, $args = false )
+    {
+        if( empty( $args ) or !is_array( $args ) )
+            $args = array();
+
+        $args = array_merge( $args, array(
+            'post_status' => 'private',
+        ) );
+
+        return self::get_slug_page_url( $slug, $args );
     }
 
     public static function form_str( $str )
@@ -625,5 +652,60 @@ class WC_S2P_Helper
     public static function strtrans( $str )
     {
         return str_replace( array( '%3F', '%26', '%23' ), array( '?', '&', '#' ), $str );
+    }
+
+    //! \brief Returns function/method call backtrace
+    /**
+      *  Used for debugging calls to functions or methods.
+      *  \return Method will return a string representing function/method calls.
+      */
+    static function debug_call_backtrace()
+    {
+         $backtrace = '';
+         if( is_array( ($err_info = debug_backtrace()) ) )
+         {
+             $err_info = array_reverse( $err_info );
+             foreach( $err_info as $i => $trace_data )
+             {
+                 if( !isset( $trace_data['args'] ) )
+                     $trace_data['args'] = '';
+                 if( !isset( $trace_data['class'] ) )
+                     $trace_data['class'] = '';
+                 if( !isset( $trace_data['type'] ) )
+                     $trace_data['type'] = '';
+                 if( !isset( $trace_data['function'] ) )
+                     $trace_data['function'] = '';
+                 if( !isset( $trace_data['file'] ) )
+                     $trace_data['file'] = '(unknown)';
+                 if( !isset( $trace_data['line'] ) )
+                     $trace_data['line'] = 0;
+
+                 $args_str = '';
+                 if( is_array( $trace_data['args'] ) )
+                 {
+                     foreach( $trace_data['args'] as $key => $val )
+                     {
+                         if( is_bool( $val ) )
+                             $args_str .= '('.gettype( $val ).') ['.($val?'true':'false').'], ';
+                         elseif( is_resource( $val ) )
+                             $args_str .= '('.@get_resource_type( $val ).'), ';
+                         elseif( is_array( $val ) )
+                             $args_str .= '(array) ['.count( $val ).'], ';
+                         elseif( !is_object( $val ) )
+                             $args_str .= '('.gettype( $val ).') ['.$val.'], ';
+                         else
+                             $args_str .= '('.get_class( $val ).'), ';
+                     }
+
+                     $args_str = substr( $args_str, 0, -2 );
+                 } else
+                     $args_str = $trace_data['args'];
+
+                 $backtrace .= '#'.($i+1).'. '.$trace_data['class'].$trace_data['type'].$trace_data['function'].'( '.$args_str.' ) - '.
+                               $trace_data['file'].':'.$trace_data['line']."\n";
+             }
+         }
+
+         return $backtrace;
     }
 }

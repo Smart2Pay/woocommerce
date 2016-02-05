@@ -226,6 +226,60 @@ class WC_S2P_SDK_Interface extends WC_S2P_Base
         return true;
     }
 
+    public function init_payment( $payment_details_arr, $plugin_settings_arr = false )
+    {
+        $this->reset_error();
+
+        if( empty( $plugin_settings_arr ) or !is_array( $plugin_settings_arr ) )
+            $plugin_settings_arr = WC_S2P_Helper::get_plugin_settings();
+
+        if( empty( $payment_details_arr ) or !is_array( $payment_details_arr )
+         or !($api_credentials = $this->get_api_credentials( $plugin_settings_arr )) )
+            return false;
+
+        if( empty( $plugin_settings_arr['return_url'] )
+         or !PHS_params::check_type( $plugin_settings_arr['return_url'], PHS_params::T_URL ) )
+        {
+            $this->set_error( self::ERR_GENERIC, WC_s2p()->__( 'Return URL in plugin settings is invalid.' ) );
+            return false;
+        }
+
+        $api_parameters['api_key'] = $api_credentials['api_key'];
+        $api_parameters['site_id'] = $api_credentials['site_id'];
+        $api_parameters['environment'] = $api_credentials['environment'];
+
+        $api_parameters['method'] = 'payments';
+        $api_parameters['func'] = 'payment_init';
+
+        $api_parameters['get_variables'] = array();
+        $api_parameters['method_params'] = array( 'payment' => $payment_details_arr );
+
+        if( empty( $api_parameters['method_params']['payment']['tokenlifetime'] ) )
+            $api_parameters['method_params']['payment']['tokenlifetime'] = 15;
+
+        $api_parameters['method_params']['payment']['returnurl'] = $plugin_settings_arr['return_url'];
+
+        $call_params = array();
+
+        $finalize_params = array();
+        $finalize_params['redirect_now'] = false;
+
+        if( !($call_result = S2P_SDK\S2P_SDK_Module::quick_call( $api_parameters, $call_params, $finalize_params ))
+         or empty( $call_result['call_result'] ) or !is_array( $call_result['call_result'] )
+         or empty( $call_result['call_result']['payment'] ) or !is_array( $call_result['call_result']['payment'] ) )
+        {
+            if( ($error_arr = S2P_SDK\S2P_SDK_Module::st_get_error())
+            and !empty( $error_arr['display_error'] ) )
+                $this->set_error( self::ERR_GENERIC, $error_arr['display_error'] );
+            else
+                $this->set_error( self::ERR_GENERIC, WC_s2p()->__( 'API call to initialize payment failed. Please try again.' ) );
+
+            return false;
+        }
+
+        return $call_result['call_result']['payment'];
+    }
+
     public function seconds_to_launch_sync( $plugin_settings_arr = false )
     {
         if( empty($plugin_settings_arr) or ! is_array( $plugin_settings_arr ) )

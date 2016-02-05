@@ -112,8 +112,23 @@ class Woocommerce_Smart2pay_Installer
             ),
         ) );
 
-        foreach ( $pages as $key => $page ) {
-            if( !wc_create_page( esc_sql( $page['name'] ), 'woocommerce_' . $key . '_page_id', $page['title'], $page['content'], ! empty( $page['parent'] ) ? wc_get_page_id( $page['parent'] ) : '' ) )
+        foreach ( $pages as $key => $page )
+        {
+            $page_parent = '';
+            if( !empty( $page['parent'] ) )
+                $page_parent = wc_get_page_id( $page['parent'] );
+
+            if( !($page_id = wc_create_page( esc_sql( $page['name'] ), 'woocommerce_' . $key . '_page_id', $page['title'], $page['content'],  $page_parent )) )
+                return false;
+
+            // Make pages private so they won't appear in shop menu (WC hardcoded page status)
+            $page_data = array(
+                'ID'             => $page_id,
+                'post_status'    => 'private',
+            );
+
+            if( !($result = wp_update_post( $page_data ))
+             or is_wp_error( $result ) )
                 return false;
         }
 
@@ -235,13 +250,15 @@ class Woocommerce_Smart2pay_Installer
         if( !($wpdb->query( "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}smart2pay_logs (
                         log_id int(11) NOT NULL AUTO_INCREMENT,
                         order_id int(11) NOT NULL default '0',
+                        environment varchar(50) default NULL,
                         log_type varchar(255) default NULL,
                         log_data text default NULL,
                         log_source_file varchar(255) default NULL,
-                        log_source_file_line varchar(255) default NULL,
-                        log_created timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+                        log_source_file_line int(11) NOT NULL default '0',
+                        log_created datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
                         PRIMARY KEY (log_id),
                         KEY order_id (order_id),
+                        KEY environment (environment),
                         KEY log_type (log_type)
                     ) $collate;" )) )
         {
