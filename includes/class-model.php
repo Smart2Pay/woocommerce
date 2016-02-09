@@ -61,11 +61,12 @@ abstract class WC_S2P_Model extends WC_S2P_Base
     /**
      * Overwrite this method to alter parameters sent to edit method
      *
+     * @param array $existing_arr Existing data from database
      * @param array $params Parameters passed to edit method
      *
      * @return array|bool Changed edit parameters. If returns false will stop insertion.
      */
-    public function edit_check_parameters( $params )
+    public function edit_check_parameters( $existing_arr, $params )
     {
         return $params;
     }
@@ -243,7 +244,7 @@ abstract class WC_S2P_Model extends WC_S2P_Base
             return false;
         }
 
-        if( !($params = $this->edit_check_parameters( $params )) )
+        if( !($params = $this->edit_check_parameters( $existing_arr, $params )) )
         {
             if( !$this->has_error() )
                 $this->set_error( self::ERR_PARAMETERS, 'Invalid parameters passed to edit method.' );

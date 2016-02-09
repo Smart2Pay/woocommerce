@@ -365,7 +365,6 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         $methods_in_row = 0;
         foreach( $methods_list_arr as $method_id => $method_arr )
         {
-            // var_dump( $method_arr );
             // id, method_id, environment, enabled, surcharge_percent, surcharge_amount, surcharge_currency,
             // priority, last_update, configured, display_name, description, logo_url
             $surcharge_explained_str = '';
@@ -638,7 +637,8 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 .s2p-method-img-td { height: 50px; width: 134px; text-align: center; }
                 </style>
 
-                <small>Higher priority means method will be displayed upper in the list.</small>
+                <small>Higher priority means method will be displayed upper in the list.</small><br/>
+                NOTE: Surcharges will be calculated from cart subtotal + shipping price. Additional taxes and fees will not be included in surcharge calculation.<br/>
                 <div style="clear: both;"></div>
                 <table class="form-table">
                 <thead>
@@ -1172,39 +1172,28 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             return false;
         }
 
-        //if(
-        //    (!empty( $method_details_arr['surcharge_percent'] ) and (float)$method_details_arr['surcharge_percent'])
-        //    or
-        //    (!empty( $method_details_arr['surcharge_amount'] ) and (float)$method_details_arr['surcharge_amount'])
-        //)
-        //{
-        //    // Apply surcharge
-        //    $percentage = (float)$method_details_arr['surcharge_percent'];
-        //    $surcharge = ((WC()->cart->cart_contents_total + WC()->cart->shipping_total) * $percentage / 100) + (float)$method_details_arr['surcharge_amount'];
-        //
-        //    WC()->cart->add_fee( 'Payment Method Surcharge', $surcharge, false, '' );
-        //
-        //    WC()->cart->calculate_totals();
-        //}
+        $surcharge_amount_percent = 0;
+        $surcharge_total_amount = 0;
+        if(
+            (!empty( $method_details_arr['surcharge_percent'] ) and (float)$method_details_arr['surcharge_percent'])
+            or
+            (!empty( $method_details_arr['surcharge_amount'] ) and (float)$method_details_arr['surcharge_amount'])
+        )
+        {
+            // Apply surcharge
+            $percentage = (float)$method_details_arr['surcharge_percent'];
+            $surcharge_amount_percent = ((WC()->cart->cart_contents_total + WC()->cart->shipping_total) * $percentage / 100);
+            $surcharge_total_amount = $surcharge_amount_percent + (float)$method_details_arr['surcharge_amount'];
+        }
+
+        $method_details_arr['surcharge_amount_percent'] = $surcharge_amount_percent;
+        $method_details_arr['surcharge_total_amount'] = $surcharge_total_amount;
 
         if( defined( 'WOOCOMMERCE_CHECKOUT' ) and constant( 'WOOCOMMERCE_CHECKOUT' ) )
         {
             $this->payment_flow['passed_validation'] = true;
             $this->flow_parameters( 's2p_method_details', $method_details_arr );
         }
-
-        //$buf = '';
-        //
-        //ob_start();
-        //
-        //var_dump( $_POST );
-        //echo '<hr/>';
-        //var_dump( WC()->checkout()->posted );
-        //echo '<hr/>';
-        //var_dump( $method_details_arr );
-        //$buf .= ob_get_clean();
-        //
-        //wc_add_notice( '['.$buf.']', 'error' );
 
         return true;
     }
@@ -1230,27 +1219,52 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             return array();
         }
 
+        /** @var WC_S2P_Transactions_Model $transactions_model */
+        if( !($transactions_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Transactions_Model' )) )
+        {
+            wc_add_notice( WC_s2p()->__( 'Couldn\'t obtain transactions model. Please retry.' ) );
+            return array();
+        }
+
         if( !($sdk_interface = new WC_S2P_SDK_Interface()) )
         {
             wc_add_notice( WC_s2p()->__( 'Couldn\'t initiate SDK instance.' ), 'error' );
             return array();
         }
 
-        $fields_meta_data = array( 'method_id', 'environment', 'surcharge_percent', 'surcharge_amount', 'surcharge_currency', 'display_name' );
-        $meta_data_arr = array();
+        $order_amount = number_format( $order->order_total, 2, '.', '' );
+        $order_centimes = $order_amount * 100;
+
+        $fields_meta_data = array( 'method_id', 'environment', 'surcharge_percent', 'surcharge_amount', 'surcharge_currency',
+                                   'surcharge_amount_percent', 'surcharge_total_amount' );
+        $transaction_arr = array();
         foreach( $fields_meta_data as $field )
         {
             if( array_key_exists( $field, $method_details ) )
-                $meta_data_arr[$field] = $method_details[$field];
+                $transaction_arr[$field] = $method_details[$field];
         }
 
-        wc_delete_order_item_meta( $order->id, self::ORDER_PAYMENT_META_KEY );
-        if( !empty( $meta_data_arr ) )
-            wc_add_order_item_meta( $order->id, self::ORDER_PAYMENT_META_KEY, $meta_data_arr, true );
+        $site_id = 0;
+        if( ($api_credentials = $sdk_interface->get_api_credentials( $this->settings )) )
+        {
+            $site_id = $api_credentials['site_id'];
+        }
 
-        $merchant_transaction_id = $order->id;
-        if( $this->settings['environment'] == Woocommerce_Smart2pay_Environment::ENV_DEMO )
-            $merchant_transaction_id .= '_'.str_replace( '.', '', microtime( true ) ).'_'.rand( 1000, 9999 );
+        $transaction_arr['site_id'] = $site_id;
+        $transaction_arr['order_id'] = $order->id;
+        $transaction_arr['amount'] = $order_amount;
+        $transaction_arr['currency'] = $order->get_order_currency();
+
+        if( !($transaction_db_arr = $transactions_model->save_transaction( $transaction_arr )) )
+        {
+            wc_add_notice( WC_s2p()->__( 'Couldn\'t save transaction details to database.' ), 'error' );
+            return array();
+        }
+
+        if( $this->settings['environment'] != Woocommerce_Smart2pay_Environment::ENV_DEMO )
+            $merchant_transaction_id = $order->id;
+        else
+            $merchant_transaction_id = WC_S2P_Helper::convert_to_demo_merchant_transaction_id( $order->id );
 
         if( $this->check_settings_checkbox_value( 'product_description_ref' ) )
             $description = WC_s2p()->__( 'Ref. no.: ' ).$order->id;
@@ -1259,47 +1273,99 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 
         $payment_arr = array();
         $payment_arr['merchanttransactionid'] = $merchant_transaction_id;
-        $payment_arr['amount'] = $order->order_total * 100;
+        $payment_arr['amount'] = $order_centimes;
         $payment_arr['currency'] = $order->get_order_currency();
         $payment_arr['methodid'] = $method_details['method_id'];
         $payment_arr['description'] = $description;
-        //$payment_arr['customer' => array(
-        //    'merchantcustomerid' => '',
-        //    'email' => '',
-        //    'firstname' => 'First Name',
-        //    'lastname' => 'Last Name',
-        //    'phone' => '',
-        //    'company' => '',
-        //),
-        //'billingaddress' => array(
-        //    'country' => 'RO', // ISO 2 chars country code
-        //    'city' => '',
-        //    'zipcode' => '',
-        //    'state' => '',
-        //    'street' => '',
-        //    'streetnumber' => '',
-        //    'housenumber' => '',
-        //    'houseextension' => '',
-        //),
-        //'shippingaddress' => array(
-        //    'country' => '',
-        //    'city' => '',
-        //    'zipcode' => '',
-        //    'state' => '',
-        //    'street' => '',
-        //    'streetnumber' => '',
-        //    'housenumber' => '',
-        //    'houseextension' => '',
-        //),
+        $payment_arr['customer'] = array(
+            'email' => $order->billing_email,
+            'firstname' => $order->shipping_first_name,
+            'lastname' => $order->shipping_last_name,
+            'phone' => $order->billing_phone,
+            'company' => $order->billing_company,
+        );
 
-        //if( !($payment_request = $sdk_interface->init_payment( $payment_arr, $this->settings )) )
-        //{
-        //    if( !$sdk_interface->has_error() )
-        //        wc_add_notice( WC_s2p()->__( 'Couldn\'t initiate request to server.' ), 'error' );
-        //    else
-        //        wc_add_notice( $sdk_interface->get_error_message(), 'error' );
-        //    return array();
-        //}
+        $street_str = '';
+        $street_number_str = '';
+        if( strlen( $order->billing_address_1 ) > 100 )
+        {
+            $street_str = WC_S2P_Helper::mb_substr( $order->billing_address_1, 0, 100 );
+            $street_number_str = WC_S2P_Helper::mb_substr( $order->billing_address_1, 100 );
+        }
+
+        $street_number_str .= $order->billing_address_2;
+
+        $payment_arr['billingaddress'] = array(
+            'country' => $order->billing_country, // ISO 2 chars country code
+            'city' => $order->billing_city,
+            'zipcode' => $order->billing_postcode,
+            'state' => $order->billing_state,
+            'street' => $street_str,
+            'streetnumber' => $street_number_str,
+            //'housenumber' => '',
+            //'houseextension' => '',
+        );
+
+        $street_str = '';
+        $street_number_str = '';
+        if( strlen( $order->shipping_address_1 ) > 100 )
+        {
+            $street_str = WC_S2P_Helper::mb_substr( $order->shipping_address_1, 0, 100 );
+            $street_number_str = WC_S2P_Helper::mb_substr( $order->shipping_address_1, 100 );
+        }
+
+        $street_number_str .= $order->shipping_address_2;
+
+        $payment_arr['shippingaddress'] = array(
+            'country' => $order->shipping_country,
+            'city' => $order->shipping_city,
+            'zipcode' => $order->shipping_postcode,
+            'state' => $order->shipping_state,
+            'street' => $street_str,
+            'streetnumber' => $street_number_str,
+            //'housenumber' => '',
+            //'houseextension' => '',
+        );
+
+        // Get order items and send it as articles...
+        if( ($products_arr = WC_S2P_Helper::get_order_products( $order ))
+        and is_array( $products_arr ) )
+            $payment_arr['articles'] = $products_arr;
+
+        if( !($payment_request = $sdk_interface->init_payment( $payment_arr, $this->settings )) )
+        {
+            if( !$sdk_interface->has_error() )
+                wc_add_notice( WC_s2p()->__( 'Couldn\'t initiate request to server.' ), 'error' );
+            else
+                wc_add_notice( $sdk_interface->get_error_message(), 'error' );
+            return array();
+        }
+
+        $transaction_arr = array();
+        $transaction_arr['order_id'] = $order->id;
+        $transaction_arr['payment_id'] = (!empty( $payment_request['id'] )?$payment_request['id']:0);
+        $transaction_arr['payment_status'] = ((!empty( $payment_request['status'] ) and !empty( $payment_request['status']['id'] ))?$payment_request['status']['id']:0);
+
+        $extra_data_arr = array();
+        if( !empty( $payment_request['referencedetails'] ) and is_array( $payment_request['referencedetails'] ) )
+        {
+            foreach( $payment_request['referencedetails'] as $key => $val )
+            {
+                if( is_null( $val ) )
+                    continue;
+
+                $extra_data_arr[$key] = $val;
+            }
+        }
+
+        if( !empty( $extra_data_arr ) )
+            $transaction_arr['extra_data'] = $extra_data_arr;
+
+        if( !($transaction_db_arr = $transactions_model->save_transaction( $transaction_arr )) )
+        {
+            // Just log the error and don't break payment flow...
+            WC_s2p()->logger()->log( 'Error updating transaction for order ['.$order->id.'].' );
+        }
 
         // Mark as on-hold (we're awaiting the cheque)
         $order->update_status( $this->settings['order_status'], WC_s2p()->__( 'Initiating payment...' ) );
@@ -1313,7 +1379,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         // Return thankyou redirect
         return array(
             'result' 	=> 'success',
-            'redirect'	=> $this->get_return_url( $order )
+            'redirect'	=> (!empty( $payment_request['redirecturl'] )?$payment_request['redirecturl']:$this->get_return_url( $order )),
         );
     }
 }

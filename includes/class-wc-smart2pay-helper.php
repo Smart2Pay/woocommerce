@@ -11,6 +11,132 @@ class WC_S2P_Helper
         return str_replace( 'https:', 'http:', add_query_arg( 'wc-api', self::NOTIFICATION_ENTRY_POINT, home_url( '/' ) ) );
     }
 
+    public static function transaction_details_titles()
+    {
+        return array(
+            'bankcode' => WC_s2p()->__( 'Bank Code' ),
+            'bankname' => WC_s2p()->__( 'Bank Name' ),
+            'entityid' => WC_s2p()->__( 'Entity ID' ),
+            'entitynumber' => WC_s2p()->__( 'Entity Number' ),
+            'referenceid' => WC_s2p()->__( 'Reference ID' ),
+            'referencenumber' => WC_s2p()->__( 'Reference Number' ),
+            'swift_bic' => WC_s2p()->__( 'Swift / BIC' ),
+            'accountcurrency' => WC_s2p()->__( 'Account Currency' ),
+            'accountnumber' => WC_s2p()->__( 'Account Number' ),
+            'accountholder' => WC_s2p()->__( 'Account Holder' ),
+            'iban' => WC_s2p()->__( 'IBAN' ),
+        );
+    }
+
+    public static function transaction_details_key_to_title( $key )
+    {
+        $all_titles = self::transaction_details_titles();
+
+        return (!empty( $all_titles[$key] )?$all_titles[$key]:$key);
+    }
+
+    public static function convert_to_demo_merchant_transaction_id( $mt_id )
+    {
+        return 'DEMO_'.base_convert( time(), 10, 36 ).'_'.$mt_id;
+    }
+
+    public static function convert_from_demo_merchant_transaction_id( $mt_id )
+    {
+        if( strstr( $mt_id, '_' ) !== false
+        and strtoupper( substr( $mt_id, 0, 4 ) ) == 'DEMO'
+        and ($mtid_arr = explode( '_', $mt_id, 3 ))
+        and !empty( $mtid_arr[2] ) )
+            $mt_id = $mtid_arr[2];
+
+        return intval( $mt_id );
+    }
+
+    public static function get_order_products( $order_data )
+    {
+        if( !function_exists( 'wc_get_order' ) )
+            return false;
+
+        /** @var WC_Order $order_obj */
+        $order_obj = false;
+        if( is_int( $order_data ) )
+            $order_obj = wc_get_order( $order_data );
+        elseif( is_object( $order_data )
+            and $order_data instanceof WC_Order )
+            $order_obj = $order_data;
+
+        if( empty( $order_obj )
+         or !($products_arr = $order_obj->get_items( array( 'line_item', 'shipping', 'fee', 'coupon', 'tax' ) ))
+         or !is_array( $products_arr ) )
+            return false;
+
+        $articles_arr = array();
+        $knti = 0;
+        $fees_indexes = array();
+        foreach( $products_arr as $product_arr )
+        {
+            if( $product_arr['type'] == 'coupon' )
+                continue;
+
+            $article = array();
+            $article['merchantarticleid'] = 1;
+            $article['name'] = $product_arr['name'];
+            $article['quantity'] = 1;
+            $article['price'] = 0;
+            $article['vat'] = 0;
+            $article['discount'] = 0;
+            $article['type'] = 1;
+
+            switch( $product_arr['type'] )
+            {
+                default:
+                    continue;
+                break;
+
+                case 'fee':
+                    $article['price'] = $product_arr['line_total'];
+                    $fees_indexes[] = $knti;
+                break;
+
+                case 'line_item':
+                    $article['quantity'] = (empty( $product_arr['qty'] )?1:$product_arr['qty']);
+                    $article['price'] = $product_arr['line_total'] / $product_arr['qty'];
+                    $article['merchantarticleid'] = $product_arr['product_id'];
+                break;
+
+                case 'shipping':
+                    $article['price'] = $product_arr['cost'];
+                    $article['type'] = 2;
+                break;
+
+                case 'tax':
+                    $article['name'] = $product_arr['label'];
+                    $article['price'] = $product_arr['tax_amount'] + $product_arr['shipping_tax_amount'];
+                break;
+            }
+
+            $articles_arr[$knti] = $article;
+            $knti++;
+        }
+
+        // Prepare centimes...
+        foreach( $articles_arr as $knti => $article_arr )
+        {
+            $articles_arr[$knti]['price']    = number_format( $articles_arr[$knti]['price'] * 100, 0, '.', '' );
+            $articles_arr[$knti]['vat']      = number_format( $articles_arr[$knti]['vat'] * 100, 0, '.', '' );
+            $articles_arr[$knti]['discount'] = number_format( $articles_arr[$knti]['discount'] * 100, 0, '.', '' );
+        }
+
+        return $articles_arr;
+    }
+
+    public static function mb_substr( $message, $start, $length = null )
+    {
+        if( function_exists( 'mb_substr' ) )
+            return mb_substr( $message, $start, $length, 'UTF-8' );
+
+        return ($length===null?substr( $message, $start ):substr( $message, $start, $length ));
+    }
+
     public static function get_plugin_gateway_object()
     {
         WC_s2p()->init_smart2pay_gateway();
@@ -437,7 +563,7 @@ class WC_S2P_Helper
     static public function parse_string( $string )
     {
         if( empty( $string )
-            or (!is_array( $string ) and !is_string( $string )) )
+         or (!is_array( $string ) and !is_string( $string )) )
             return array();
 
         if( is_array( $string ) )

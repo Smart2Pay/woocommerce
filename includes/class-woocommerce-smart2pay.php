@@ -32,6 +32,11 @@ class Woocommerce_Smart2pay
     // woocommerce_smart2pay_notification
     const SHORTCODE_PAYMENT = 'woocommerce_smart2pay_pay', SHORTCODE_RETURN = 'woocommerce_smart2pay_return';
 
+    const S2P_STATUS_OPEN = 1, S2P_STATUS_SUCCESS = 2, S2P_STATUS_CANCELLED = 3, S2P_STATUS_FAILED = 4, S2P_STATUS_EXPIRED = 5, S2P_STATUS_PENDING_CUSTOMER = 6,
+        S2P_STATUS_PENDING_PROVIDER = 7, S2P_STATUS_SUBMITTED = 8, S2P_STATUS_AUTHORIZED = 9, S2P_STATUS_APPROVED = 10, S2P_STATUS_CAPTURED = 11, S2P_STATUS_REJECTED = 12,
+        S2P_STATUS_PENDING_CAPTURE = 13, S2P_STATUS_EXCEPTION = 14, S2P_STATUS_PENDING_CANCEL = 15, S2P_STATUS_REVERSED = 16, S2P_STATUS_COMPLETED = 17, S2P_STATUS_PROCESSING = 18,
+        S2P_STATUS_DISPUTED = 19, S2P_STATUS_CHARGEBACK = 20;
+
 	/**
 	 * The loader that's responsible for maintaining and registering all hooks that power
 	 * the plugin.
@@ -128,7 +133,7 @@ class Woocommerce_Smart2pay
 
     public function load_dependencies_after_init()
     {
-        require_once $this->plugin_path() . 'includes/class-woocommerce-smart2pay-admin-notices.php';
+	    require_once $this->plugin_path() . 'includes/class-woocommerce-smart2pay-admin-notices.php';
     }
 
     /**
@@ -193,11 +198,74 @@ class Woocommerce_Smart2pay
 		$this->loader->add_filter( 'woocommerce_payment_gateways', $this, 'register_smart2pay_gateway' );
 		$this->loader->add_action( 'plugins_loaded', $this, 'init_smart2pay_gateway' );
 
+        add_action( 'woocommerce_order_details_after_order_table', array( $this, 'add_order_details' ) );
+
         add_action( 'woocommerce_api_'.strtolower( WC_S2P_Helper::NOTIFICATION_ENTRY_POINT ), array( 'WC_S2P_Server_Notifications', 'notification_entry_point' ) );
 
         // Payment gateway is initiated after fees calculation...
         add_action( 'woocommerce_cart_calculate_fees', array( $this, 'add_cart_fees' ) );
 	}
+
+    /**
+     * Add payment method details to order template
+     *
+     * @param WC_Order $order
+     */
+    public function add_order_details( $order )
+    {
+        /** @var WC_S2P_Transactions_Model $transactions_model */
+        /** @var WC_S2P_Methods_Model $methods_model */
+        if( !($payment_gateway_obj = WC_S2P_Helper::get_plugin_gateway_object())
+         or $payment_gateway_obj->id != $order->payment_method
+         or !($transactions_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Transactions_Model' ))
+         or !($methods_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Methods_Model' ))
+         or !($transaction_arr = $transactions_model->get_details_fields( array( 'order_id' => $order->id ) ))
+         or empty( $transaction_arr['method_id'] )
+         or empty( $transaction_arr['environment'] )
+         or !($method_arr = $methods_model->get_details_fields( array( 'method_id' => $transaction_arr['method_id'], 'environment' => $transaction_arr['environment'] ) ))
+        )
+            return;
+
+        ?>
+        <header><h2><?php echo $this->__( 'Payment Method Details' )?></h2></header>
+        <table class="shop_table">
+            <tbody>
+            <tr>
+                <th><?php echo $this->__( 'Payment Method' )?></th>
+                <td><?php echo (!empty( $method_arr['display_name'] )?$method_arr['display_name']:$this->__( 'N/A' ))?></td>
+            </tr>
+            <tr>
+                <th><?php echo $this->__( 'Payment ID' )?></th>
+                <td><?php echo (!empty( $transaction_arr['payment_id'] )?$transaction_arr['payment_id']:$this->__( 'N/A' ))?></td>
+            </tr>
+            <?php
+            if( !empty( $transaction_arr['extra_data'] )
+            and ($extra_data = WC_S2P_Helper::parse_string( $transaction_arr['extra_data'] ))
+            and is_array( $extra_data ) )
+            {
+                foreach( $extra_data as $key => $val )
+                {
+                    if( !($key_title = WC_S2P_Helper::transaction_details_key_to_title( $key )) )
+                        $key_title = $key;
+                    ?>
+                    <tr>
+                        <th><?php echo $key_title?></th>
+                        <td><?php echo $val?></td>
+                    </tr>
+                    <?php
+                }
+
+                ?>
+                <tr>
+                    <td colspan="2"><?php echo $this->__( 'In order to complete payment please use details above.' )?></td>
+                </tr>
+                <?php
+            }
+            ?>
+            </tbody>
+        </table>
+        <?php
+    }
 
     public function init_smart2pay_gateway()
     {
@@ -215,6 +283,78 @@ class Woocommerce_Smart2pay
         return $method_id;
     }
 
+    public static function do_return_shortcode()
+    {
+        $data = PHS_params::_g( 'data', PHS_params::T_INT );
+        $mtid = PHS_params::_g( 'MerchantTransactionID', PHS_params::T_ASIS );
+
+        if( empty( $data ) )
+            $data = self::S2P_STATUS_FAILED;
+
+        if( !($mtid = WC_S2P_Helper::convert_from_demo_merchant_transaction_id( $mtid )) )
+        {
+            return WC_s2p()->__( 'Unknown transaction.' );
+        }
+
+        $check_arr = array();
+        $check_arr['order_id'] = $mtid;
+
+        /** @var WC_S2P_Transactions_Model $transactions_model */
+        if( !($transactions_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Transactions_Model' ))
+         or !($transaction_arr = $transactions_model->get_details_fields( $check_arr )) )
+        {
+            return WC_s2p()->__( 'Couldn\'t extract transaction details.' );
+        }
+
+        if( !($plugin_settings_arr = WC_S2P_Helper::get_plugin_settings()) )
+        {
+            return WC_s2p()->__( 'Couldn\'t extract Smart2Pay plugin settings.' );
+        }
+
+        if( empty( $plugin_settings_arr['message_data_'.$data] ) )
+            $return_message = WC_s2p()->__( 'Unknown return status.' );
+        else
+            $return_message = $plugin_settings_arr['message_data_'.$data];
+
+        ob_start();
+        ?>
+        <h1 class="entry-title"><?php echo WC_s2p()->__( 'Thank you for shopping with us!' )?></h1>
+        <p><?php echo $return_message?></p>
+        <?php
+
+        if( !empty( $transaction_arr['extra_data'] )
+        and ($extra_data = WC_S2P_Helper::parse_string( $transaction_arr['extra_data'] ))
+        and is_array( $extra_data ) )
+        {
+            ?>
+	        <p>In order to complete your transaction please use details below.</p>
+	        <table>
+            <thead>
+            <tr>
+                <th colspan="2">Transaction Extra Details</th>
+            </tr>
+            </thead>
+            <tbody>
+            <?php
+            foreach( $extra_data as $key => $val )
+            {
+                if( !($key_title = WC_S2P_Helper::transaction_details_key_to_title( $key )) )
+                    $key_title = $key;
+                ?>
+                <tr>
+                    <td><?php echo $key_title?></td>
+                    <td><?php echo $val?></td>
+                </tr>
+                <?php
+            }
+            ?></tbody></table><?php
+        }
+
+        $buf = ob_get_clean();
+
+        return $buf;
+    }
+
     /**
      * Add surcharges or other fees in cart
      *
@@ -222,7 +362,7 @@ class Woocommerce_Smart2pay
      */
     public function add_cart_fees( $cart )
     {
-        WC_s2p()->logger()->log( 'Fee from: '.WC_S2P_Helper::debug_call_backtrace() );
+        // WC_s2p()->logger()->log( 'Fee from: '.WC_S2P_Helper::debug_call_backtrace() );
 
         if( !is_checkout() )
             return;
@@ -262,8 +402,10 @@ class Woocommerce_Smart2pay
 
         $this->session_s2p_method( $s2p_method );
 
+        $cart_total = WC()->cart->cart_contents_total + WC()->cart->shipping_total;
+
         $percentage = (float)$method_details_arr['surcharge_percent'];
-        $surcharge = (WC()->cart->cart_contents_total + WC()->cart->shipping_total) * $percentage / 100 + (float)$method_details_arr['surcharge_amount'];
+        $surcharge = $cart_total * $percentage / 100 + (float)$method_details_arr['surcharge_amount'];
 
         WC()->cart->add_fee( 'Payment Method Surcharge', $surcharge, false, '' );
     }
@@ -325,7 +467,8 @@ class Woocommerce_Smart2pay
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
 
-	}
+        add_shortcode( self::SHORTCODE_RETURN, array( __CLASS__, 'do_return_shortcode' ) );
+    }
 
     public function logger()
     {

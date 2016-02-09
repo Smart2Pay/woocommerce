@@ -46,6 +46,7 @@ class Woocommerce_Smart2pay_Loader {
     private $_models_arr = array(
         'WC_S2P_Methods_Model' => 'includes/class-model-methods.php',
         'WC_S2P_Configured_Methods_Model' => 'includes/class-model-configured-methods.php',
+        'WC_S2P_Transactions_Model' => 'includes/class-model-transactions.php',
     );
 
 	/**

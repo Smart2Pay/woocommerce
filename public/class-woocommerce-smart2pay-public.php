@@ -74,7 +74,6 @@ class Woocommerce_Smart2pay_Public {
 		 */
 
 		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/woocommerce-smart2pay-public.css', array(), $this->version, 'all' );
-
 	}
 
 	/**
