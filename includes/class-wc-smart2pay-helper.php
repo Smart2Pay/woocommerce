@@ -11,6 +11,11 @@ class WC_S2P_Helper
         return str_replace( 'https:', 'http:', add_query_arg( 'wc-api', self::NOTIFICATION_ENTRY_POINT, home_url( '/' ) ) );
     }
 
+    public static function check_checkbox_value( $value )
+    {
+        return (!empty( $value ) and $value == 'yes');
+    }
+
     public static function transaction_details_titles()
     {
         return array(
@@ -113,6 +118,9 @@ class WC_S2P_Helper
                     $article['price'] = $product_arr['tax_amount'] + $product_arr['shipping_tax_amount'];
                 break;
             }
+
+            if( $article['price'] <= 0 )
+                continue;
 
             $articles_arr[$knti] = $article;
             $knti++;

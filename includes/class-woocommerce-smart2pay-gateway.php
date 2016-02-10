@@ -144,7 +144,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
              or !Woocommerce_Smart2pay_Displaymode::validDisplayMode( $this->sanitized_fields['methods_display_mode'] ) )
                 $this->add_error_message( WC_s2p()->__( 'Please provide valid value for Methods display mode.' ) );
 
-            if( !empty( $this->sanitized_fields['product_description_ref'] )
+            if( !WC_S2P_Helper::check_checkbox_value( $this->sanitized_fields['product_description_ref'] )
             and empty( $this->sanitized_fields['product_description_custom'] ) )
                 $this->add_error_message( WC_s2p()->__( 'Please provide a Custom product description.' ) );
 
@@ -154,8 +154,11 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 $this->sanitized_fields['grid_column_number'] = intval( $this->sanitized_fields['grid_column_number'] );
         }
 
+        $s2p_we_have_methods = PHS_params::_p( 's2p_we_have_methods', PHS_params::T_INT );
+
         $configured_methods_error = '';
-        if( Woocommerce_Smart2pay_Environment::validEnvironment( $this->sanitized_fields['environment'] ) )
+        if( !empty( $s2p_we_have_methods )
+        and Woocommerce_Smart2pay_Environment::validEnvironment( $this->sanitized_fields['environment'] ) )
         {
             /** @var WC_S2P_Methods_Model $methods_model */
             $methods_list_arr = array();
@@ -624,6 +627,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             } else
             {
                 ?>
+                <input type="hidden" name="s2p_we_have_methods" value="1" />
                 <p>
                     <a href="javascript:start_syncronization()" class="button-primary">Re-Syncronize Methods</a>
                 </p>
@@ -977,7 +981,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 'title'       => WC_s2p()->__( 'Return URL' ),
                 'type'        => 'text',
                 'default'     => '',
-                'description' => WC_s2p()->__( 'Default' ).': '.WC_S2P_Helper::get_slug_internal_page_url( $wc_s2p::SHORTCODE_RETURN ).'<br/>'.
+                'description' => WC_s2p()->__( 'Default' ).': '.WC_S2P_Helper::get_slug_internal_page_url( $wc_s2p::PAGE_SLUG_RETURN ).'<br/>'.
                                  '!!! '.WC_s2p()->__( 'Please set Notification URL in Smart2Pay Dashboard to: ' ).WC_S2P_Helper::notification_url(),
             ),
 

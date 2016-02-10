@@ -30,7 +30,9 @@
 class Woocommerce_Smart2pay
 {
     // woocommerce_smart2pay_notification
-    const SHORTCODE_PAYMENT = 'woocommerce_smart2pay_pay', SHORTCODE_RETURN = 'woocommerce_smart2pay_return';
+    const SHORTCODE_RETURN = 'woocommerce_smart2pay_return', PAGE_SLUG_RETURN = 'smart2pay_return';
+
+    const POST_TYPE_ORDER = 'shop_order';
 
     const S2P_STATUS_OPEN = 1, S2P_STATUS_SUCCESS = 2, S2P_STATUS_CANCELLED = 3, S2P_STATUS_FAILED = 4, S2P_STATUS_EXPIRED = 5, S2P_STATUS_PENDING_CUSTOMER = 6,
         S2P_STATUS_PENDING_PROVIDER = 7, S2P_STATUS_SUBMITTED = 8, S2P_STATUS_AUTHORIZED = 9, S2P_STATUS_APPROVED = 10, S2P_STATUS_CAPTURED = 11, S2P_STATUS_REJECTED = 12,
@@ -198,24 +200,71 @@ class Woocommerce_Smart2pay
 		$this->loader->add_filter( 'woocommerce_payment_gateways', $this, 'register_smart2pay_gateway' );
 		$this->loader->add_action( 'plugins_loaded', $this, 'init_smart2pay_gateway' );
 
+        // Order details in front
         add_action( 'woocommerce_order_details_after_order_table', array( $this, 'add_order_details' ) );
 
+        // Order details in email
+        add_action( 'woocommerce_email_after_order_table', array( $this, 'add_email_order_details' ), 10, 4 );
+
+        // Priority 35 so it will define metabox after WC_Admin_Meta_Boxes::remove_meta_boxes(),
+        // WC_Admin_Meta_Boxes::rename_meta_boxes(), WC_Admin_Meta_Boxes::add_meta_boxes()
+        // Order details in admin
+        add_action( 'add_meta_boxes', array( $this, 'add_meta_boxes' ), 35 );
+
+        // Notification entry point
         add_action( 'woocommerce_api_'.strtolower( WC_S2P_Helper::NOTIFICATION_ENTRY_POINT ), array( 'WC_S2P_Server_Notifications', 'notification_entry_point' ) );
 
         // Payment gateway is initiated after fees calculation...
         add_action( 'woocommerce_cart_calculate_fees', array( $this, 'add_cart_fees' ) );
-	}
+    }
+
+    public function add_meta_boxes()
+    {
+        global $post;
+
+        /** @var WC_S2P_Transactions_Model $transactions_model */
+        if( empty( $post )
+         or $post->post_type != self::POST_TYPE_ORDER
+         or !($order = wc_get_order( $post ))
+         or !($payment_gateway_obj = WC_S2P_Helper::get_plugin_gateway_object())
+         or $order->payment_method != $payment_gateway_obj->id )
+            return;
+
+        add_meta_box( 'woocommerce-order-s2p-details', $this->__( 'Payment Method Details' ), array( $this, 'order_details_meta_box' ), self::POST_TYPE_ORDER, 'normal', 'default' );
+        remove_meta_box( 'submitdiv', self::POST_TYPE_ORDER, 'side' );
+    }
+
+    public function order_details_meta_box( $post )
+    {
+        global $post;
+
+        if( empty( $post )
+         or $post->post_type != self::POST_TYPE_ORDER
+         or !($order = wc_get_order( $post )) )
+            return;
+
+        $this->add_order_details( $order );
+    }
+
+    /**
+     * Show the order details table
+     */
+    public function add_email_order_details( $order, $sent_to_admin = false, $plain_text = false, $email = '' )
+    {
+        $this->add_order_details( $order, $sent_to_admin, true, $plain_text );
+    }
 
     /**
      * Add payment method details to order template
      *
      * @param WC_Order $order
      */
-    public function add_order_details( $order )
+    public function add_order_details( $order, $to_admin = null, $is_email = false, $plain_text = false )
     {
         /** @var WC_S2P_Transactions_Model $transactions_model */
         /** @var WC_S2P_Methods_Model $methods_model */
-        if( !($payment_gateway_obj = WC_S2P_Helper::get_plugin_gateway_object())
+        if( empty( $order )
+         or !($payment_gateway_obj = WC_S2P_Helper::get_plugin_gateway_object())
          or $payment_gateway_obj->id != $order->payment_method
          or !($transactions_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Transactions_Model' ))
          or !($methods_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Methods_Model' ))
@@ -226,45 +275,104 @@ class Woocommerce_Smart2pay
         )
             return;
 
-        ?>
-        <header><h2><?php echo $this->__( 'Payment Method Details' )?></h2></header>
-        <table class="shop_table">
-            <tbody>
-            <tr>
-                <th><?php echo $this->__( 'Payment Method' )?></th>
-                <td><?php echo (!empty( $method_arr['display_name'] )?$method_arr['display_name']:$this->__( 'N/A' ))?></td>
-            </tr>
-            <tr>
-                <th><?php echo $this->__( 'Payment ID' )?></th>
-                <td><?php echo (!empty( $transaction_arr['payment_id'] )?$transaction_arr['payment_id']:$this->__( 'N/A' ))?></td>
-            </tr>
-            <?php
-            if( !empty( $transaction_arr['extra_data'] )
-            and ($extra_data = WC_S2P_Helper::parse_string( $transaction_arr['extra_data'] ))
-            and is_array( $extra_data ) )
+        if( !$is_email )
+        {
+            // site front/admin
+            $data_header = '<table class="shop_table">'.
+                           '<tbody>';
+            $rows_template = '<tr>'.
+                             '<th>%s</th>'.
+                             '<td>%s</td>'.
+                             '</tr>';
+            $data_footer = '</tbody></table>';
+        } elseif( !$plain_text )
+        {
+            // html email
+            $data_header = '<table class="td" cellspacing="0" cellpadding="6" style="width: 100%; font-family: \'Helvetica Neue\', Helvetica, Roboto, Arial, sans-serif;" border="1">'.
+                           '<tbody>';
+            $rows_template = '<tr>'.
+                             '<td class="td" scope="row" style="text-align:left; word-wrap:break-word; vertical-align:middle; border: 1px solid #eee; font-family: \'Helvetica Neue\', Helvetica, Roboto, Arial, sans-serif;">%s</td>'.
+                             '<td class="td" style="text-align:left; word-wrap:break-word; vertical-align:middle; border: 1px solid #eee; font-family: \'Helvetica Neue\', Helvetica, Roboto, Arial, sans-serif;">%s</td>'.
+                             '</tr>';
+            $data_footer = '</tbody></table>';
+        } else
+        {
+            // plain text email
+            $data_header = "\n\n";
+            $rows_template = '%s: '."\t".'%s'."\n";
+            $data_footer = "\n\n";
+        }
+
+        if( $to_admin === null )
+            $to_admin = is_admin();
+
+        // In admin interface this is content of metabox so we don't need title...
+        if( !is_admin() or $is_email )
+        {
+            $title = '<h2>'.$this->__( 'Payment Method Details' ).'</h2>';
+
+            if( !$is_email )
+                $title = '<header>'.$title.'</header>';
+
+            echo $title;
+        }
+
+        echo $data_header;
+
+        if( $to_admin )
+            echo sprintf( $rows_template,
+                          $this->__( 'Environment' ),
+                          (!empty($transaction_arr['environment']) ? ucfirst( $transaction_arr['environment'] ): $this->__( 'N/A' ))
+            );
+
+        echo sprintf( $rows_template,
+                      $this->__( 'Payment Method' ),
+                      (!empty($method_arr['display_name']) ? ucfirst( $method_arr['display_name'] ): $this->__( 'N/A' ))
+        );
+        echo sprintf( $rows_template,
+                      $this->__( 'Payment ID' ),
+                      (!empty($transaction_arr['payment_id']) ? ucfirst( $transaction_arr['payment_id'] ): $this->__( 'N/A' ))
+        );
+
+        if( !empty( $transaction_arr['extra_data'] )
+        and ($extra_data = WC_S2P_Helper::parse_string( $transaction_arr['extra_data'] ))
+        and is_array( $extra_data ) )
+        {
+            foreach( $extra_data as $key => $val )
             {
-                foreach( $extra_data as $key => $val )
+                if( !($key_title = WC_S2P_Helper::transaction_details_key_to_title( $key )) )
+                    $key_title = $key;
+
+                echo sprintf( $rows_template,
+                              $key_title,
+                              $val
+                );
+            }
+
+            if( !$to_admin )
+            {
+                if( !$is_email )
                 {
-                    if( !($key_title = WC_S2P_Helper::transaction_details_key_to_title( $key )) )
-                        $key_title = $key;
                     ?>
                     <tr>
-                        <th><?php echo $key_title?></th>
-                        <td><?php echo $val?></td>
+                        <td colspan="2"><?php echo $this->__( 'In order to complete payment please use details above.' ) ?></td>
                     </tr>
                     <?php
+                } elseif( !$plain_text )
+                {
+                    ?>
+                    <tr>
+                        <td colspan="2" class="td" style="text-align:left;"><?php echo $this->__( 'In order to complete payment please use details above.' ) ?></td>
+                    </tr>
+                    <?php
+                } else
+                {
+                    echo "\n".$this->__( 'In order to complete payment please use details above.' )."\n";
                 }
-
-                ?>
-                <tr>
-                    <td colspan="2"><?php echo $this->__( 'In order to complete payment please use details above.' )?></td>
-                </tr>
-                <?php
             }
-            ?>
-            </tbody>
-        </table>
-        <?php
+        }
+
+        echo $data_footer;
     }
 
     public function init_smart2pay_gateway()
