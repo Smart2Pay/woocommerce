@@ -115,16 +115,6 @@ class Woocommerce_Smart2pay_Installer
 
             if( !($page_id = wc_create_page( esc_sql( $page['name'] ), 'woocommerce_' . $key . '_page_id', $page['title'], $page['content'],  $page_parent )) )
                 return false;
-
-            // Make pages private so they won't appear in shop menu (WC hardcoded page status)
-            $page_data = array(
-                'ID'             => $page_id,
-                'post_status'    => 'private',
-            );
-
-            if( !($result = wp_update_post( $page_data ))
-             or is_wp_error( $result ) )
-                return false;
         }
 
         delete_transient( 'woocommerce_cache_excluded_uris' );

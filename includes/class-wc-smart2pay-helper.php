@@ -335,10 +335,6 @@ class WC_S2P_Helper
         if( empty( $args ) or !is_array( $args ) )
             $args = array();
 
-        $args = array_merge( $args, array(
-            'post_status' => 'private',
-        ) );
-
         return self::get_slug_page_url( $slug, $args );
     }
 

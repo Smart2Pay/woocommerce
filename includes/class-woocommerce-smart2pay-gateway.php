@@ -686,7 +686,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                             </div>
 
                             <div style="padding:2px; clear:both;">
-                                <input type="text" class="input-text" style="width: 50px !important; text-align: right;" name="s2p_fixed_amount[<?php echo $method_arr['method_id']?>]" id="s2p_fixed_amount_<?php echo $method_arr['method_id']?>" value="<?php echo ((!empty( $method_settings ) and isset( $method_settings['surcharge_percent'] ))?$method_settings['surcharge_percent']:0)?>" /> <?php echo $wc_currency?>
+                                <input type="text" class="input-text" style="width: 50px !important; text-align: right;" name="s2p_fixed_amount[<?php echo $method_arr['method_id']?>]" id="s2p_fixed_amount_<?php echo $method_arr['method_id']?>" value="<?php echo ((!empty( $method_settings ) and isset( $method_settings['surcharge_amount'] ))?$method_settings['surcharge_amount']:0)?>" /> <?php echo $wc_currency?>
                             </div>
 
                         </td>
