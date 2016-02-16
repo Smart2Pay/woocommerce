@@ -61,6 +61,8 @@ class WC_S2P_Helper
         if( !function_exists( 'wc_get_order' ) )
             return false;
 
+        include_once( S2P_SDK_DIR_CLASSES.'s2p_sdk_values_source_article_type.inc.php' );
+
         /** @var WC_Order $order_obj */
         $order_obj = false;
         if( is_int( $order_data ) )
@@ -96,7 +98,7 @@ class WC_S2P_Helper
             $article['price'] = 0;
             $article['vat'] = 0;
             $article['discount'] = 0;
-            $article['type'] = 1;
+            $article['type'] = \S2P_SDK\S2P_SDK_Values_Sources_Article_Type::TYPE_PRODUCT;
 
             switch( $product_arr['type'] )
             {
@@ -106,6 +108,7 @@ class WC_S2P_Helper
 
                 case 'fee':
                     $article['price'] = $product_arr['line_total'];
+                    $article['type'] = \S2P_SDK\S2P_SDK_Values_Sources_Article_Type::TYPE_HANDLING;
                     $fees_indexes[] = $knti;
                 break;
 
@@ -117,13 +120,14 @@ class WC_S2P_Helper
 
                 case 'shipping':
                     $article['price'] = $product_arr['cost'];
-                    $article['type'] = 2;
+                    $article['type'] = \S2P_SDK\S2P_SDK_Values_Sources_Article_Type::TYPE_SHIPPING;
                     $should_have_shipping = true;
                 break;
 
                 case 'tax':
                     $article['name'] = $product_arr['label'];
                     $article['price'] = $product_arr['tax_amount'] + $product_arr['shipping_tax_amount'];
+                    $article['type'] = \S2P_SDK\S2P_SDK_Values_Sources_Article_Type::TYPE_HANDLING;
                 break;
             }
 
@@ -146,11 +150,11 @@ class WC_S2P_Helper
             $difference = $order_amount - $total_price;
 
             // Apply difference...
-            if( $difference_knti != -1 )
-                $articles_arr[$difference_knti]['price'] = $articles_arr[$difference_knti]['price'] + $difference;
-
-            elseif( $shipping_knti != -1 )
+            if( $shipping_knti != -1 )
                 $articles_arr[$shipping_knti]['price'] = $articles_arr[$shipping_knti]['price'] + $difference;
+
+            elseif( $difference_knti != -1 )
+                $articles_arr[$difference_knti]['price'] = $articles_arr[$difference_knti]['price'] + $difference;
 
             elseif( $should_have_shipping )
             {
@@ -162,7 +166,7 @@ class WC_S2P_Helper
                 $article['price'] = $difference;
                 $article['vat'] = 0;
                 $article['discount'] = 0;
-                $article['type'] = 2;
+                $article['type'] = \S2P_SDK\S2P_SDK_Values_Sources_Article_Type::TYPE_SHIPPING;
 
                 $articles_arr[] = $article;
             }

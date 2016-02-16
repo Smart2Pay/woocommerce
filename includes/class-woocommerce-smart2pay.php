@@ -550,7 +550,8 @@ class Woocommerce_Smart2pay
         $percentage = (float)$method_details_arr['surcharge_percent'];
         $surcharge = $cart_total * $percentage / 100 + (float)$method_details_arr['surcharge_amount'];
 
-        WC()->cart->add_fee( 'Payment Method Surcharge', $surcharge, false, '' );
+        if( $surcharge != 0 )
+            WC()->cart->add_fee( 'Payment Method Surcharge', $surcharge, false, '' );
     }
 
     public function register_smart2pay_gateway( $load_gateways )

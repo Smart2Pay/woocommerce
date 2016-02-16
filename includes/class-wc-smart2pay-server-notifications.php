@@ -148,10 +148,10 @@ class WC_S2P_Server_Notifications extends WC_S2P_Base
                     exit;
                 }
 
-                if( $transaction_arr['amount'] * 100 != $payment_arr['amount']
+                if( (string)($transaction_arr['amount'] * 100) !== (string)$payment_arr['amount']
                  or $transaction_arr['currency'] != $payment_arr['currency'] )
                 {
-                    $error_msg = 'Transaction details doesn\'t match ['.
+                    $error_msg = 'Transaction details don\'t match ['.
                                  ($transaction_arr['amount'] * 100).' != '.$payment_arr['amount'].
                                  ' OR '.
                                  $transaction_arr['currency'].' != '.$payment_arr['currency'].']';
