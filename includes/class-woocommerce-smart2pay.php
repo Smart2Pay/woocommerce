@@ -419,7 +419,42 @@ class Woocommerce_Smart2pay
             return WC_s2p()->__( 'Couldn\'t extract Smart2Pay plugin settings.' );
         }
 
-        if( empty( $plugin_settings_arr['message_data_'.$data] ) )
+        if( !defined( 'S2P_SDK_DIR_METHODS' )
+         or !@file_exists( S2P_SDK_DIR_METHODS.'s2p_sdk_meth_payments.inc.php' ) )
+        {
+            return WC_s2p()->__( 'Couldn\'t locate Smart2Pay SDK files.' );
+        }
+
+        include_once( S2P_SDK_DIR_METHODS.'s2p_sdk_meth_payments.inc.php' );
+
+        $status_converter = array(
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_OPEN => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,
+            //\S2P_SDK\S2P_SDK_Meth_Payments::STATUS_SUCCESS => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_SUCCESS,
+            //\S2P_SDK\S2P_SDK_Meth_Payments::STATUS_CANCELLED => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_CANCELLED,
+            //\S2P_SDK\S2P_SDK_Meth_Payments::STATUS_FAILED => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_FAILED,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_EXPIRED => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_FAILED,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_CUSTOMER => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,
+            //\S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_SUBMITTED => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_AUTHORIZED => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_APPROVED => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_CAPTURED => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_REJECTED => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_FAILED,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_CAPTURE => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_EXCEPTION => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_CANCEL => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_REVERSED => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_COMPLETED => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_SUCCESS,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PROCESSING => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_DISPUTED => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,
+            \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_CHARGEBACK => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,
+        );
+
+        if( !isset( $plugin_settings_arr['message_data_'.$data] )
+        and !empty( $status_converter[$data] ) )
+            $data = $status_converter[$data];
+
+        if( !isset( $plugin_settings_arr['message_data_'.$data] ) )
             $return_message = WC_s2p()->__( 'Unknown return status.' );
         else
             $return_message = $plugin_settings_arr['message_data_'.$data];

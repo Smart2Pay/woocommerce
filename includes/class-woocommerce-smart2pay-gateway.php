@@ -1237,6 +1237,12 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         }
 
         $order_amount = number_format( $order->order_total, 2, '.', '' );
+
+        // Get order items and send it as articles...
+        if( !($products_arr = WC_S2P_Helper::get_order_products( $order, $order_amount ))
+         or !is_array( $products_arr ) )
+            $products_arr = array();
+
         $order_centimes = $order_amount * 100;
 
         $fields_meta_data = array( 'method_id', 'environment', 'surcharge_percent', 'surcharge_amount', 'surcharge_currency',
@@ -1331,17 +1337,14 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             //'houseextension' => '',
         );
 
-        // Get order items and send it as articles...
-        if( ($products_arr = WC_S2P_Helper::get_order_products( $order ))
-        and is_array( $products_arr ) )
-            $payment_arr['articles'] = $products_arr;
+        $payment_arr['articles'] = $products_arr;
 
         if( !($payment_request = $sdk_interface->init_payment( $payment_arr, $this->settings )) )
         {
             if( !$sdk_interface->has_error() )
                 wc_add_notice( WC_s2p()->__( 'Couldn\'t initiate request to server.' ), 'error' );
             else
-                wc_add_notice( $sdk_interface->get_error_message(), 'error' );
+                wc_add_notice( WC_s2p()->__( 'Call error: ' ).$sdk_interface->get_error_message(), 'error' );
             return array();
         }
 

@@ -117,6 +117,13 @@ class WC_S2P_Configured_Methods_Model extends WC_S2P_Model
             $row_method_arr['surcharge_currency'] = (!empty( $method_configuration_arr['surcharge_currency'] )?$method_configuration_arr['surcharge_currency']:$wc_currency);
             $row_method_arr['priority'] = (!empty( $method_configuration_arr['priority'] )?$method_configuration_arr['priority']:0);
 
+            if( $row_method_arr['surcharge_percent'] < 0
+             or $row_method_arr['surcharge_amount'] < 0 )
+            {
+                $this->set_error( self::ERR_GENERIC, WC_s2p()->__( 'Surcharge amounts cannot be negative.' ) );
+                return false;
+            }
+
             if( ($existing_method_arr = $this->get_details_fields( $check_arr )) )
             {
                 // we already have this method in database... update it...

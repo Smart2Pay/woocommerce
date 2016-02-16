@@ -56,7 +56,7 @@ class WC_S2P_Helper
         return intval( $mt_id );
     }
 
-    public static function get_order_products( $order_data )
+    public static function get_order_products( $order_data, $order_amount = false )
     {
         if( !function_exists( 'wc_get_order' ) )
             return false;
@@ -74,9 +74,16 @@ class WC_S2P_Helper
          or !is_array( $products_arr ) )
             return false;
 
+        if( $order_amount === false )
+            $order_amount = number_format( $order_obj->order_total, 2, '.', '' );
+
         $articles_arr = array();
         $knti = 0;
         $fees_indexes = array();
+        $shipping_knti = -1;
+        $difference_knti = -1;
+        $should_have_shipping = false;
+        $total_price = 0;
         foreach( $products_arr as $product_arr )
         {
             if( $product_arr['type'] == 'coupon' )
@@ -111,6 +118,7 @@ class WC_S2P_Helper
                 case 'shipping':
                     $article['price'] = $product_arr['cost'];
                     $article['type'] = 2;
+                    $should_have_shipping = true;
                 break;
 
                 case 'tax':
@@ -122,8 +130,42 @@ class WC_S2P_Helper
             if( $article['price'] <= 0 )
                 continue;
 
+            if( $product_arr['type'] == 'shipping' )
+                $shipping_knti = $knti;
+            if( $article['quantity'] == 1 )
+                $difference_knti = $knti;
+
+            $total_price += $article['price'];
+
             $articles_arr[$knti] = $article;
             $knti++;
+        }
+
+        if( $total_price != $order_amount )
+        {
+            $difference = $order_amount - $total_price;
+
+            // Apply difference...
+            if( $difference_knti != -1 )
+                $articles_arr[$difference_knti]['price'] = $articles_arr[$difference_knti]['price'] + $difference;
+
+            elseif( $shipping_knti != -1 )
+                $articles_arr[$shipping_knti]['price'] = $articles_arr[$shipping_knti]['price'] + $difference;
+
+            elseif( $should_have_shipping )
+            {
+                // Add difference to "free shipping" item...
+                $article = array();
+                $article['merchantarticleid'] = 1;
+                $article['name'] = 'Shipping Difference';
+                $article['quantity'] = 1;
+                $article['price'] = $difference;
+                $article['vat'] = 0;
+                $article['discount'] = 0;
+                $article['type'] = 2;
+
+                $articles_arr[] = $article;
+            }
         }
 
         // Prepare centimes...

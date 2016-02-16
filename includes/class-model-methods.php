@@ -230,7 +230,7 @@ class WC_S2P_Methods_Model extends WC_S2P_Model
 
         $list_arr['join_sql'] = ' LEFT JOIN '.$wpdb->prefix.'smart2pay_method ON `'.$table_name.'`.method_id = '.$wpdb->prefix.'smart2pay_method.method_id ';
 
-        $list_arr['order_by'] = $table_name.'.priority ASC';
+        $list_arr['order_by'] = $table_name.'.priority DESC';
 
         if( !($available_methods_arr = $this->get_list( $list_arr ))
          or !is_array( $available_methods_arr ) )
