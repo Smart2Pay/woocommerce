@@ -1,0 +1,794 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: WooCommerce Smart2Pay Plugin v1.0.16\n"
+"POT-Creation-Date: 2016-02-17 17:44+0200\n"
+"PO-Revision-Date: 2016-02-17 18:00+0200\n"
+"Last-Translator: \n"
+"Language-Team: Smart2Pay <support@smart2pay.com>\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.4\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-KeywordsList: __\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: ../includes/sdk\n"
+
+#: includes/class-model-configured-methods.php:90
+msgid "Invalid environment."
+msgstr "Invalid environment."
+
+#: includes/class-model-configured-methods.php:123
+msgid "Surcharge amounts cannot be negative."
+msgstr "Surcharge amounts cannot be negative."
+
+#: includes/class-model-configured-methods.php:136
+#: includes/class-model-transactions.php:38
+msgid "Error saving configured method details in database."
+msgstr "Error saving configured method details in database."
+
+#: includes/class-model-configured-methods.php:151
+#: includes/class-model-transactions.php:50
+msgid "Error adding configured method details in database."
+msgstr "Error adding configured method details in database."
+
+#: includes/class-model-logs.php:69
+msgid "Error saving log details in database."
+msgstr "Error saving log details in database."
+
+#: includes/class-model-methods.php:81
+msgid "Countries codes required."
+msgstr "Countries codes required."
+
+#: includes/class-model-methods.php:87
+#: includes/class-wc-smart2pay-sdk-interface.php:193
+#: includes/class-wc-smart2pay-sdk-interface.php:200
+msgid "Couldn't obtain method details."
+msgstr "Couldn't obtain method details."
+
+#: includes/class-model-methods.php:114
+msgid "Error saving method countries."
+msgstr "Error saving method countries."
+
+#: includes/class-model-transactions.php:21
+msgid "Bad transaction parameters."
+msgstr "Bad transaction parameters."
+
+#: includes/class-model-transactions.php:72
+#: includes/class-model-transactions.php:130
+msgid "Invalid environment for transaction."
+msgstr "Invalid environment for transaction."
+
+#: includes/class-model.php:160 includes/class-model.php:234
+msgid "Bad parameters."
+msgstr "Bad parameters."
+
+#: includes/class-model.php:166 includes/class-model.php:243
+msgid "Table doesn't have a primary field defined."
+msgstr "Table doesn't have a primary field defined."
+
+#: includes/class-model.php:201 includes/class-model.php:299
+msgid "Error saving details in database."
+msgstr "Error saving details in database."
+
+#: includes/class-model.php:227
+msgid "Row doesn't exist in database."
+msgstr "Row doesn't exist in database."
+
+#: includes/class-model.php:291
+msgid "Error creating update query."
+msgstr "Error creating update query."
+
+#: includes/class-model.php:738
+msgid "Table fields not provided."
+msgstr "Table fields not provided."
+
+#: includes/class-wc-smart2pay-helper.php:22
+msgid "Bank Code"
+msgstr "Bank Code"
+
+#: includes/class-wc-smart2pay-helper.php:23
+msgid "Bank Name"
+msgstr "Bank Name"
+
+#: includes/class-wc-smart2pay-helper.php:24
+msgid "Entity ID"
+msgstr "Entity ID"
+
+#: includes/class-wc-smart2pay-helper.php:25
+msgid "Entity Number"
+msgstr "Entity Number"
+
+#: includes/class-wc-smart2pay-helper.php:26
+msgid "Reference ID"
+msgstr "Reference ID"
+
+#: includes/class-wc-smart2pay-helper.php:27
+msgid "Reference Number"
+msgstr "Reference Number"
+
+#: includes/class-wc-smart2pay-helper.php:28
+msgid "Swift / BIC"
+msgstr "Swift / BIC"
+
+#: includes/class-wc-smart2pay-helper.php:29
+msgid "Account Currency"
+msgstr "Account Currency"
+
+#: includes/class-wc-smart2pay-helper.php:30
+msgid "Account Number"
+msgstr "Account Number"
+
+#: includes/class-wc-smart2pay-helper.php:31
+msgid "Account Holder"
+msgstr "Account Holder"
+
+#: includes/class-wc-smart2pay-helper.php:32
+msgid "IBAN"
+msgstr "IBAN"
+
+# %s 5 seconds
+#: includes/class-wc-smart2pay-helper.php:243
+#, php-format
+msgid "%s ago"
+msgstr "%s ago"
+
+#: includes/class-wc-smart2pay-sdk-interface.php:63
+msgid "Unknown environment settings."
+msgstr "Unknown environment settings."
+
+#: includes/class-wc-smart2pay-sdk-interface.php:124
+msgid "API call failed while obtaining methods list."
+msgstr "API call failed while obtaining methods list."
+
+#: includes/class-wc-smart2pay-sdk-interface.php:169
+msgid "API call failed while obtaining method details."
+msgstr "API call failed while obtaining method details."
+
+#: includes/class-wc-smart2pay-sdk-interface.php:187
+#: includes/class-wc-smart2pay-sdk-interface.php:328
+msgid "Couldn't load methods model."
+msgstr "Couldn't load methods model."
+
+#: includes/class-wc-smart2pay-sdk-interface.php:221
+#: includes/class-wc-smart2pay-sdk-interface.php:400
+msgid "Error updating method countries."
+msgstr "Error updating method countries."
+
+#: includes/class-wc-smart2pay-sdk-interface.php:243
+msgid "Return URL in plugin settings is invalid."
+msgstr "Return URL in plugin settings is invalid."
+
+#: includes/class-wc-smart2pay-sdk-interface.php:275
+msgid "API call to initialize payment failed. Please try again."
+msgstr "API call to initialize payment failed. Please try again."
+
+#: includes/class-wc-smart2pay-sdk-interface.php:336
+msgid "Couldn't obtain a list of methods."
+msgstr "Couldn't obtain a list of methods."
+
+#: includes/class-wc-smart2pay-sdk-interface.php:369
+msgid "Error saving method details in database."
+msgstr "Error saving method details in database."
+
+#: includes/class-wc-smart2pay-sdk-interface.php:386
+msgid "Error adding method details in database."
+msgstr "Error adding method details in database."
+
+#: includes/class-wc-smart2pay-server-notifications.php:201
+msgid "Payment success!"
+msgstr "Payment success!"
+
+#: includes/class-wc-smart2pay-server-notifications.php:210
+msgid "Payment cancelled."
+msgstr "Payment cancelled."
+
+#: includes/class-wc-smart2pay-server-notifications.php:214
+msgid "Payment failed."
+msgstr "Payment failed."
+
+#: includes/class-wc-smart2pay-server-notifications.php:218
+msgid "Payment expired."
+msgstr "Payment expired."
+
+#: includes/class-woocommerce-smart2pay-displaymode.php:30
+msgid "Only Logo"
+msgstr "Only Logo"
+
+#: includes/class-woocommerce-smart2pay-displaymode.php:31
+msgid "Method Name"
+msgstr "Method Name"
+
+#: includes/class-woocommerce-smart2pay-displaymode.php:32
+msgid "Both"
+msgstr "Both"
+
+#: includes/class-woocommerce-smart2pay-environment.php:30
+msgid "Demo"
+msgstr "Demo"
+
+#: includes/class-woocommerce-smart2pay-environment.php:31
+msgid "Test"
+msgstr "Test"
+
+#: includes/class-woocommerce-smart2pay-environment.php:32
+msgid "Live"
+msgstr "Live"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:28
+msgid "Smart2Pay"
+msgstr "Smart2Pay"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:29
+msgid "Secure payments through 100+ alternative payment options."
+msgstr "Secure payments through 100+ alternative payment options."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:36
+msgid "Alternative payment methods"
+msgstr "Alternative payment methods"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:85
+msgid "Nothing to save..."
+msgstr "Nothing to save..."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:88
+msgid ""
+"Couldn't obtain configured methods model. Please retry or re-install plugin."
+msgstr ""
+"Couldn't obtain configured methods model. Please retry or re-install plugin."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:93
+msgid "Please provide a Title."
+msgstr "Please provide a Title."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:97
+msgid "Please provide valid value for Environment."
+msgstr "Please provide valid value for Environment."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:101
+msgid "Please provide a valid Return URL."
+msgstr "Please provide a valid Return URL."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:119
+msgid "Please provide a TEST API Key."
+msgstr "Please provide a TEST API Key."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:121
+msgid "Please provide a TEST Site ID."
+msgstr "Please provide a TEST Site ID."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:136
+msgid "Please provide a LIVE API Key."
+msgstr "Please provide a LIVE API Key."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:138
+msgid "Please provide a LIVE Site ID."
+msgstr "Please provide a LIVE Site ID."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:145
+msgid "Please provide valid value for Methods display mode."
+msgstr "Please provide valid value for Methods display mode."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:149
+msgid "Please provide a Custom product description."
+msgstr "Please provide a Custom product description."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:194
+msgid "Couldn't save payment methods' settings."
+msgstr "Couldn't save payment methods' settings."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:307
+#: includes/class-woocommerce-smart2pay-gateway.php:1153
+msgid "Please select a country first."
+msgstr "Please select a country first."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:314
+msgid "Couldn't initialize Methods model."
+msgstr "Couldn't initialize Methods model."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:339
+msgid "No payment methods available currently for selected country."
+msgstr "No payment methods available currently for selected country."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:495
+msgid "NOT INSTALLED"
+msgstr "NOT INSTALLED"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:498
+msgid "NOT COMPATIBLE"
+msgstr "NOT COMPATIBLE"
+
+# %s represents minimal SDK version required by plugin
+#: includes/class-woocommerce-smart2pay-gateway.php:498
+#, php-format
+msgid "%s or higher required"
+msgstr "%s or higher required"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:519
+msgid "Smart2Pay SDK is not currently installed"
+msgstr "Smart2Pay SDK is not currently installed"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:520
+msgid "Smart2Pay WooCommerce plugin cannot function properly without SDK."
+msgstr "Smart2Pay WooCommerce plugin cannot function properly without SDK."
+
+# %s represents directory location where SDK must be installed
+#: includes/class-woocommerce-smart2pay-gateway.php:522
+#, php-format
+msgid ""
+"In order to install please make sure you install it in <strong>%s</strong> "
+"directory."
+msgstr ""
+"In order to install please make sure you install it in <strong>%s</strong> "
+"directory."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:523
+msgid ""
+"SDK doesn't need any configuration, it only has to be copied to the provided "
+"path."
+msgstr ""
+"SDK doesn't need any configuration, it only has to be copied to the provided "
+"path."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:539
+msgid "Syncronizing. Please wait..."
+msgstr "Syncronizing. Please wait..."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:549
+msgid "Payment Methods"
+msgstr "Payment Methods"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:557
+msgid ""
+"Couldn't syncronize payment methods with Smart2Pay servers. Please try again "
+"later."
+msgstr ""
+"Couldn't syncronize payment methods with Smart2Pay servers. Please try again "
+"later."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:570
+msgid "Payment methods syncronized with success."
+msgstr "Payment methods syncronized with success."
+
+# %s represents current environment used by plugin (can be demo, test or live)
+#: includes/class-woocommerce-smart2pay-gateway.php:612
+#, php-format
+msgid ""
+"Currently displaying payment methods for <strong>%s</strong> environment."
+msgstr ""
+"Currently displaying payment methods for <strong>%s</strong> environment."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:613
+msgid ""
+"In order to update payment methods for other environments please select "
+"desired environment from <em>Environment</em> drop-down option and then save "
+"settings."
+msgstr ""
+"In order to update payment methods for other environments please select "
+"desired environment from <em>Environment</em> drop-down option and then save "
+"settings."
+
+# %s means environment of plugin (demo, test or live)
+#: includes/class-woocommerce-smart2pay-gateway.php:618
+#, php-format
+msgid "Methods syncronised for <strong>%s</strong> environment"
+msgstr "Methods syncronised for <strong>%s</strong> environment"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:619
+msgid "Never"
+msgstr "Never"
+
+# %s means environment of plugin (demo, test or live)
+#: includes/class-woocommerce-smart2pay-gateway.php:628
+#, php-format
+msgid ""
+"It appears that you don't have any payment methods currently in database for "
+"<strong>%s</strong> environment."
+msgstr ""
+"It appears that you don't have any payment methods currently in database for "
+"<strong>%s</strong> environment."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:629
+msgid ""
+"In order to obtain available payment methods for current plugin setup you "
+"will have to syncronize your database with our servers."
+msgstr ""
+"In order to obtain available payment methods for current plugin setup you "
+"will have to syncronize your database with our servers."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:633
+msgid "Syncronize Now"
+msgstr "Syncronize Now"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:641
+msgid "Re-Syncronize Methods"
+msgstr "Re-Syncronize Methods"
+
+# %s means number of payment methods available
+#: includes/class-woocommerce-smart2pay-gateway.php:644
+#, php-format
+msgid "%s payment methods currently available."
+msgstr "%s payment methods currently available."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:653
+msgid "Higher priority means method will be displayed upper in the list."
+msgstr "Higher priority means method will be displayed upper in the list."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:654
+msgid ""
+"NOTE: Surcharges will be calculated from cart subtotal + shipping price. "
+"Additional taxes and fees will not be included in surcharge calculation."
+msgstr ""
+"NOTE: Surcharges will be calculated from cart subtotal + shipping price. "
+"Additional taxes and fees will not be included in surcharge calculation."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:659
+msgid "Enabled?"
+msgstr "Enabled?"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:660
+msgid "Priority"
+msgstr "Priority"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:661
+msgid "Surcharge"
+msgstr "Surcharge"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:662
+msgid "Method"
+msgstr "Method"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:668
+msgid "Select all"
+msgstr "Select all"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:670
+msgid "Invert"
+msgstr "Invert"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:672
+msgid "Select none"
+msgstr "Select none"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:710
+msgid "Available in the following countries"
+msgstr "Available in the following countries"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:934
+msgid "General Settings"
+msgstr "General Settings"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:938
+msgid "Enabled"
+msgstr "Enabled"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:940
+msgid "Enable Smart2Pay payment gateway"
+msgstr "Enable Smart2Pay payment gateway"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:944
+msgid "Method Title"
+msgstr "Method Title"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:946
+msgid "This controls the title which the user sees during checkout."
+msgstr "This controls the title which the user sees during checkout."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:951
+#: includes/class-woocommerce-smart2pay.php:324
+msgid "Environment"
+msgstr "Environment"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:953
+msgid ""
+"To obtain your credentials for live and test environments, please contact us "
+"at <a href=\"mailto:support@smart2pay.com\">support@smart2pay.com</a>."
+msgstr ""
+"To obtain your credentials for live and test environments, please contact us "
+"at <a href=\"mailto:support@smart2pay.com\">support@smart2pay.com</a>."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:958
+msgid "LIVE API Key"
+msgstr "LIVE API Key"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:961
+#: includes/class-woocommerce-smart2pay-gateway.php:977
+msgid "API Key is required when communicating with Smart2Pay servers."
+msgstr "API Key is required when communicating with Smart2Pay servers."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:964
+msgid "LIVE Site ID"
+msgstr "LIVE Site ID"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:969
+msgid "LIVE Skin ID"
+msgstr "LIVE Skin ID"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:974
+msgid "TEST API Key"
+msgstr "TEST API Key"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:980
+msgid "TEST Site ID"
+msgstr "TEST Site ID"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:985
+msgid "TEST Skin ID"
+msgstr "TEST Skin ID"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:990
+msgid "Return URL"
+msgstr "Return URL"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:993
+msgid "Default"
+msgstr "Default"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:994
+msgid "Please set Notification URL in Smart2Pay Dashboard to: "
+msgstr "Please set Notification URL in Smart2Pay Dashboard to: "
+
+#: includes/class-woocommerce-smart2pay-gateway.php:998
+msgid "Display Settings"
+msgstr "Display Settings"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1002
+msgid "Display Surcharge"
+msgstr "Display Surcharge"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1004
+msgid "Display surcharge amounts to client?"
+msgstr "Display surcharge amounts to client?"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1008
+msgid "Methods display mode"
+msgstr "Methods display mode"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1010
+msgid "This controls the way payment methods will be presented to client"
+msgstr "This controls the way payment methods will be presented to client"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1015
+msgid "Show methods in grid"
+msgstr "Show methods in grid"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1017
+msgid ""
+"By default, methods will be displayed as a two columns table, having payment "
+"method's logo or name and description. When checked, description is omitted, "
+"and columns number can be specified bellow."
+msgstr ""
+"By default, methods will be displayed as a two columns table, having payment "
+"method's logo or name and description. When checked, description is omitted, "
+"and columns number can be specified bellow."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1021
+msgid "Grid column number"
+msgstr "Grid column number"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1023
+msgid ""
+"Please provide a number, if left blank, the default value is 3 (This value "
+"is used only if above option is checked)"
+msgstr ""
+"Please provide a number, if left blank, the default value is 3 (This value "
+"is used only if above option is checked)"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1027
+msgid "Send order number as product description"
+msgstr "Send order number as product description"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1029
+msgid "If not checked, system will send below custom description"
+msgstr "If not checked, system will send below custom description"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1033
+msgid "Custom product description"
+msgstr "Custom product description"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1040
+msgid "Order Related Settings"
+msgstr "Order Related Settings"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1044
+msgid "New order status"
+msgstr "New order status"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1046
+msgid "Status of order right before redirecting to payment page."
+msgstr "Status of order right before redirecting to payment page."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1051
+msgid "Order satus on SUCCESS"
+msgstr "Order satus on SUCCESS"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1053
+msgid "Status of order when payment is with success."
+msgstr "Status of order when payment is with success."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1058
+msgid "Order satus on CANCEL"
+msgstr "Order satus on CANCEL"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1060
+msgid "Status of order when transaction is cancelled."
+msgstr "Status of order when transaction is cancelled."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1065
+msgid "Order satus on FAIL"
+msgstr "Order satus on FAIL"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1067
+msgid "Status of order when transaction fails."
+msgstr "Status of order when transaction fails."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1072
+msgid "Order satus on EXPIRED"
+msgstr "Order satus on EXPIRED"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1074
+msgid "Status of order when transaction expires."
+msgstr "Status of order when transaction expires."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1080
+msgid "Payment Flow Settings"
+msgstr "Payment Flow Settings"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1084
+msgid "Success message"
+msgstr "Success message"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1086
+msgid ""
+"Thank you, the transaction has been processed successfuly. After we receive "
+"the final confirmation, we will release the goods."
+msgstr ""
+"Thank you, the transaction has been processed successfuly. After we receive "
+"the final confirmation, we will release the goods."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1089
+msgid "Failed message"
+msgstr "Failed message"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1091
+msgid "There was a problem processing your payment. Please try again."
+msgstr "There was a problem processing your payment. Please try again."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1094
+msgid "Cancelled message"
+msgstr "Cancelled message"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1096
+msgid "You have canceled the payment."
+msgstr "You have canceled the payment."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1099
+msgid "Pending message"
+msgstr "Pending message"
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1101
+msgid ""
+"Thank you, the transaction is pending. After we receive the final "
+"confirmation, we will release the goods."
+msgstr ""
+"Thank you, the transaction is pending. After we receive the final "
+"confirmation, we will release the goods."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1139
+msgid "Invalid environment setup for Smart2Pay plugin."
+msgstr "Invalid environment setup for Smart2Pay plugin."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1146
+msgid "Please select a payment method first."
+msgstr "Please select a payment method first."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1162
+msgid "Couldn't get payment method details."
+msgstr "Couldn't get payment method details."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1202
+msgid "Couldn't obtain order details."
+msgstr "Couldn't obtain order details."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1209
+msgid "Couldn't obtain payment method details."
+msgstr "Couldn't obtain payment method details."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1216
+msgid "Couldn't obtain transactions model. Please retry."
+msgstr "Couldn't obtain transactions model. Please retry."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1222
+msgid "Couldn't initiate SDK instance."
+msgstr "Couldn't initiate SDK instance."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1257
+msgid "Couldn't save transaction details to database."
+msgstr "Couldn't save transaction details to database."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1267
+msgid "Ref. no.: "
+msgstr "Ref. no.: "
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1332
+msgid "Couldn't initiate request to server."
+msgstr "Couldn't initiate request to server."
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1334
+msgid "Call error: "
+msgstr "Call error: "
+
+#: includes/class-woocommerce-smart2pay-gateway.php:1365
+msgid "Initiating payment..."
+msgstr "Initiating payment..."
+
+#: includes/class-woocommerce-smart2pay.php:233
+#: includes/class-woocommerce-smart2pay.php:312
+msgid "Payment Method Details"
+msgstr "Payment Method Details"
+
+#: includes/class-woocommerce-smart2pay.php:325
+#: includes/class-woocommerce-smart2pay.php:330
+#: includes/class-woocommerce-smart2pay.php:334
+msgid "N/A"
+msgstr "N/A"
+
+#: includes/class-woocommerce-smart2pay.php:329
+msgid "Payment Method"
+msgstr "Payment Method"
+
+#: includes/class-woocommerce-smart2pay.php:333
+msgid "Payment ID"
+msgstr "Payment ID"
+
+#: includes/class-woocommerce-smart2pay.php:358
+#: includes/class-woocommerce-smart2pay.php:365
+#: includes/class-woocommerce-smart2pay.php:370
+msgid "In order to complete payment please use details above."
+msgstr "In order to complete payment please use details above."
+
+#: includes/class-woocommerce-smart2pay.php:404
+msgid "Unknown transaction."
+msgstr "Unknown transaction."
+
+#: includes/class-woocommerce-smart2pay.php:414
+msgid "Couldn't extract transaction details."
+msgstr "Couldn't extract transaction details."
+
+#: includes/class-woocommerce-smart2pay.php:419
+msgid "Couldn't extract Smart2Pay plugin settings."
+msgstr "Couldn't extract Smart2Pay plugin settings."
+
+#: includes/class-woocommerce-smart2pay.php:425
+msgid "Couldn't locate Smart2Pay SDK files."
+msgstr "Couldn't locate Smart2Pay SDK files."
+
+#: includes/class-woocommerce-smart2pay.php:458
+msgid "Unknown return status."
+msgstr "Unknown return status."
+
+#: includes/class-woocommerce-smart2pay.php:465
+msgid "Thank you for shopping with us!"
+msgstr "Thank you for shopping with us!"
+
+#: includes/notices/html-notice-install-failed.php:9
+msgid ""
+"Failed installing all components required for Smart2Pay plugin. Please try "
+"installing again."
+msgstr ""
+"Failed installing all components required for Smart2Pay plugin. Please try "
+"installing again."
+
+#: includes/notices/html-notice-install-success.php:10
+msgid "Smart2Pay plugin installed with success."
+msgstr "Smart2Pay plugin installed with success."
+
+#: includes/notices/html-notice-install-success.php:11
+msgid "Configure Smart2Pay plugin"
+msgstr "Configure Smart2Pay plugin"
+
+#: woocommerce-smart2pay.php:66
+msgid "Settings"
+msgstr "Settings"

@@ -224,7 +224,7 @@ abstract class WC_S2P_Model extends WC_S2P_Base
 
         if( !($existing_arr = $this->data_to_array( $existing_data )) )
         {
-            $this->set_error( self::ERR_PARAMETERS, WC_s2p()->__( 'Editing row doesn\'t exist in database.' ) );
+            $this->set_error( self::ERR_PARAMETERS, WC_s2p()->__( 'Row doesn\'t exist in database.' ) );
             return false;
         }
 

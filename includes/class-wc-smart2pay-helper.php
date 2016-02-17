@@ -131,7 +131,7 @@ class WC_S2P_Helper
                 break;
             }
 
-            if( $article['price'] <= 0 )
+            if( $article['price'] < 0.01 )
                 continue;
 
             if( $product_arr['type'] == 'shipping' )
@@ -139,7 +139,7 @@ class WC_S2P_Helper
             if( $article['quantity'] == 1 )
                 $difference_knti = $knti;
 
-            $total_price += $article['price'];
+            $total_price += ((float)number_format( $article['price'], 2, '.', '' ) * $article['quantity']);
 
             $articles_arr[$knti] = $article;
             $knti++;

@@ -33,7 +33,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         $this->init_settings();
 
         // Define user set variables
-        $this->title        = $this->get_option( 'title', WC_s2p()->__( 'Smart2Pay - Alternative payment methods' ) );
+        $this->title        = $this->get_option( 'title', WC_s2p()->__( 'Alternative payment methods' ) );
         $this->description  = $this->method_description;
 
         $this->has_errors = false;
@@ -492,10 +492,10 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         <?php
         if( !defined( 'S2P_SDK_VERSION' ) )
         {
-            ?><span style="color:red;">NOT INSTALLED</span><?php
+            ?><span style="color:red;"><?php echo WC_s2p()->__( 'NOT INSTALLED' )?></span><?php
         } elseif( version_compare( S2P_SDK_VERSION, '1.0.29', '<' ))
         {
-            ?><span style="color:red;">NOT COMPATIBLE (1.0.29 or higher required)</span><?php
+            ?><span style="color:red;"><?php echo WC_s2p()->__( 'NOT COMPATIBLE' )?> (<?php echo sprintf( WC_s2p()->__( '%s or higher required' ), '1.0.29' )?></span><?php
         } else
         {
             echo 'v'.S2P_SDK_VERSION;
@@ -515,9 +515,12 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         if( !defined( 'S2P_SDK_VERSION' ) )
         {
             ?>
-            <p><span style="color:red">Smart2Pay SDK is not currently installed</span>. Smart2Pay WooCommerce plugin cannot function properly without SDK.</p>
-            <p>In order to install please make sure you install it in <strong><?php echo $wc_s2p->plugin_path().'includes/sdk'?></strong> directory.</p>
-            <p>SDK doesn't need any configuration, it only has to be copied to the provided path.</p>
+            <p>
+                <span style="color:red"><?php echo WC_s2p()->__( 'Smart2Pay SDK is not currently installed' )?></span>.
+                <?php echo WC_s2p()->__( 'Smart2Pay WooCommerce plugin cannot function properly without SDK.' )?>
+            </p>
+            <p><?php echo sprintf( WC_s2p()->__( 'In order to install please make sure you install it in <strong>%s</strong> directory.' ), $wc_s2p->plugin_path().'includes/sdk' )?></p>
+            <p><?php echo WC_s2p()->__( 'SDK doesn\'t need any configuration, it only has to be copied to the provided path.' )?></p>
             <?php
         } else
         {
@@ -533,7 +536,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 
                                 <div id="s2p_loading_content" style="margin: 20% auto 0 auto; width:80%; background-color: white;border: 2px solid lightgrey; text-align: center; padding: 40px;">
                                     <div class="ajax-loader" title="Loading..."></div>
-                                    <p style="margin: 20px auto;" id="s2p_protection_message">Syncronizing. Please wait...</p>
+                                    <p style="margin: 20px auto;" id="s2p_protection_message"><?php echo WC_s2p()->__( 'Syncronizing. Please wait...' )?></p>
                                 </div>
 
                             </div>
@@ -543,7 +546,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             </div>
 
             <a name="smart2pay_methods"></a>
-            <h3>Payment Methods</h3>
+            <h3><?php echo WC_s2p()->__( 'Payment Methods' )?></h3>
             <?php
             if( PHS_params::_g( 'sync_methods' )
             and !PHS_params::_p( 'save' )
@@ -551,7 +554,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             {
                 if( !$sdk_interface->refresh_available_methods( $this->settings ) )
                 {
-                    $error_msg = 'Couldn\'t syncronize payment methods with Smart2Pay servers. Please try again later.';
+                    $error_msg = WC_s2p()->__( 'Couldn\'t syncronize payment methods with Smart2Pay servers. Please try again later.' );
                     if( $sdk_interface->has_error() )
                         $error_msg = $sdk_interface->get_error_message();
 
@@ -564,7 +567,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 {
                     ?>
                     <div style="border-left: 4px solid green;background: #fff;margin 15px 0;padding: 1px 12px;">
-                    <p><strong>Payment methods syncronized with success.</strong></p>
+                    <p><strong><?php echo WC_s2p()->__( 'Payment methods syncronized with success.' )?></strong></p>
                     </div>
                     <script type="text/javascript">
                     jQuery(document).ready(function() {
@@ -605,23 +608,29 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 $last_sync_date = false;
             ?>
             <p>
-                Currently displaying payment methods for <strong><?php echo $this->settings['environment'] ?></strong> environment.
-                In order to update payment methods for other environments please select desired environment from <em>Environment</em> drop-down option and then save settings.
+            <?php
+                echo sprintf( WC_s2p()->__( 'Currently displaying payment methods for <strong>%s</strong> environment.' ), $this->settings['environment'] );
+                echo WC_s2p()->__( 'In order to update payment methods for other environments please select desired environment from <em>Environment</em> drop-down option and then save settings.' );
+            ?>
             </p>
 
-            <p><small>Methods syncronised for <strong><?php echo $this->settings['environment'] ?></strong> environment:
-                    <?php echo (empty( $last_sync_date )?'Never':WC_S2P_Helper::pretty_date_display( $last_sync_date ))?></small></p>
+            <p><small>
+                    <?php echo sprintf( WC_s2p()->__( 'Methods syncronised for <strong>%s</strong> environment' ), $this->settings['environment'] )?>:
+                    <?php echo (empty( $last_sync_date )?WC_s2p()->__( 'Never' ):WC_S2P_Helper::pretty_date_display( $last_sync_date ))?>
+            </small></p>
 
             <?php
             if( empty( $methods_list_arr ) )
             {
                 ?>
                 <p>
-                It appears that you don't have any payment methods currently in database for <strong><?php echo $this->settings['environment'] ?></strong> environment.
-                In order to obtain available payment methods for current plugin setup you will have to syncronize your database with our servers.
+                <?php
+                echo sprintf( WC_s2p()->__( 'It appears that you don\'t have any payment methods currently in database for <strong>%s</strong> environment.' ), $this->settings['environment'] );
+                echo WC_s2p()->__( 'In order to obtain available payment methods for current plugin setup you will have to syncronize your database with our servers.' );
+                ?>
                 </p>
                 <p>
-                    <a href="javascript:start_syncronization()" class="button-primary">Syncronize Now</a>
+                    <a href="javascript:start_syncronization()" class="button-primary"><?php echo WC_s2p()->__( 'Syncronize Now' )?></a>
                 </p>
                 <?php
             } else
@@ -629,10 +638,10 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 ?>
                 <input type="hidden" name="s2p_we_have_methods" value="1" />
                 <p>
-                    <a href="javascript:start_syncronization()" class="button-primary">Re-Syncronize Methods</a>
+                    <a href="javascript:start_syncronization()" class="button-primary"><?php echo WC_s2p()->__( 'Re-Syncronize Methods' )?></a>
                 </p>
 
-                <p style="margin-bottom: 0 !important;"><?php echo count( $methods_list_arr )?> payment methods currently available.</p>
+                <p style="margin-bottom: 0 !important;"><?php echo sprintf( WC_s2p()->__( '%s payment methods currently available.' ), count( $methods_list_arr ) )?></p>
 
                 <style>
                 .s2p_section_togglable { cursor: pointer; }
@@ -641,26 +650,26 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 .s2p-method-img-td { height: 50px; width: 134px; text-align: center; }
                 </style>
 
-                <small>Higher priority means method will be displayed upper in the list.</small><br/>
-                NOTE: Surcharges will be calculated from cart subtotal + shipping price. Additional taxes and fees will not be included in surcharge calculation.<br/>
+                <small><?php echo WC_s2p()->__( 'Higher priority means method will be displayed upper in the list.' )?></small><br/>
+                <?php echo WC_s2p()->__( 'NOTE: Surcharges will be calculated from cart subtotal + shipping price. Additional taxes and fees will not be included in surcharge calculation.' )?><br/>
                 <div style="clear: both;"></div>
                 <table class="form-table">
                 <thead>
                 <tr>
-                    <th style="width: 60px;">Enabled?</th>
-                    <th style="width: 90px;">Priority</th>
-                    <th style="width: 90px;">Surcharge</th>
-                    <th colspan="2">Method</th>
+                    <th style="width: 60px;"><?php echo WC_s2p()->__( 'Enabled?' )?></th>
+                    <th style="width: 90px;"><?php echo WC_s2p()->__( 'Priority' )?></th>
+                    <th style="width: 90px;"><?php echo WC_s2p()->__( 'Surcharge' )?></th>
+                    <th colspan="2"><?php echo WC_s2p()->__( 'Method' )?></th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr>
                     <td colspan="5">
-                        <a href="javascript:void(0);" onclick="s2p_config_js_select_all()">Select all</a>
+                        <a href="javascript:void(0);" onclick="s2p_config_js_select_all()"><?php echo WC_s2p()->__( 'Select all' )?></a>
                         |
-                        <a href="javascript:void(0);" onclick="s2p_config_js_invert()">Invert</a>
+                        <a href="javascript:void(0);" onclick="s2p_config_js_invert()"><?php echo WC_s2p()->__( 'Invert' )?></a>
                         |
-                        <a href="javascript:void(0);" onclick="s2p_config_js_deselect_all()">Select none</a>
+                        <a href="javascript:void(0);" onclick="s2p_config_js_deselect_all()"><?php echo WC_s2p()->__( 'Select none' )?></a>
 
                     </td>
                 </tr>
@@ -698,7 +707,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                             <?php
                             if( !empty( $methods_countries_arr[$method_arr['method_id']] ) )
                             {
-                                ?><strong>Available in following countries</strong>: <?php
+                                ?><strong><?php echo WC_s2p()->__( 'Available in the following countries' )?></strong>: <?php
                                 $first_country = true;
                                 foreach( $methods_countries_arr[$method_arr['method_id']] as $country_code => $country_name )
                                 {
@@ -1104,28 +1113,6 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 $this->form_fields[$field_name]['class'] = 's2p_section_togglable';
             else
                 $this->form_fields[$field_name]['class'] .= ' s2p_section_togglable';
-        }
-    }
-
-    /**
-     * Output for the order received page.
-     */
-    public function thankyou_page() {
-        if ( $this->instructions )
-            echo wpautop( wptexturize( $this->instructions ) );
-    }
-
-    /**
-     * Add content to the WC emails.
-     *
-     * @access public
-     * @param WC_Order $order
-     * @param bool $sent_to_admin
-     * @param bool $plain_text
-     */
-    public function email_instructions( $order, $sent_to_admin, $plain_text = false ) {
-        if ( $this->instructions && ! $sent_to_admin && $this->id === $order->payment_method && $order->has_status( 'on-hold' ) ) {
-            echo wpautop( wptexturize( $this->instructions ) ) . PHP_EOL;
         }
     }
 
