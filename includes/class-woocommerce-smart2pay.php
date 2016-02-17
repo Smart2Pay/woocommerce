@@ -460,7 +460,8 @@ class Woocommerce_Smart2pay
             $return_message = $plugin_settings_arr['message_data_'.$data];
 
         ob_start();
-        if( $data != \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_FAILED )
+        if( !in_array( $data, array( \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_CANCELLED,
+                                     \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_FAILED ) ) )
         {
             ?><h1 class="entry-title"><?php echo WC_s2p()->__( 'Thank you for shopping with us!' ) ?></h1><?php
         }

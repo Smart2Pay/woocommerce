@@ -102,7 +102,7 @@ class Woocommerce_Smart2pay_Installer
         $pages = apply_filters( 'woocommerce_smart2pay_create_pages', array(
             'smart2pay_return' => array(
                 'name'    => WC_s2p()->_x( $wc_s2p::PAGE_SLUG_RETURN, 'Page slug' ),
-                'title'   => WC_s2p()->_x( 'Smart2Pay Return Page', 'Page title' ),
+                'title'   => WC_s2p()->_x( 'Payment Return Page', 'Page title' ),
                 'content' => '['.$wc_s2p::SHORTCODE_RETURN.']'
             ),
         ) );
