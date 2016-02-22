@@ -156,17 +156,17 @@ class WC_S2P_Helper
             elseif( $difference_knti != -1 )
                 $articles_arr[$difference_knti]['price'] = $articles_arr[$difference_knti]['price'] + $difference;
 
-            elseif( $should_have_shipping )
+            else
             {
                 // Add difference to "free shipping" item...
                 $article = array();
                 $article['merchantarticleid'] = 1;
-                $article['name'] = 'Shipping Difference';
+                $article['name'] = 'General Fee';
                 $article['quantity'] = 1;
                 $article['price'] = $difference;
                 $article['vat'] = 0;
                 $article['discount'] = 0;
-                $article['type'] = \S2P_SDK\S2P_SDK_Values_Sources_Article_Type::TYPE_SHIPPING;
+                $article['type'] = \S2P_SDK\S2P_SDK_Values_Sources_Article_Type::TYPE_HANDLING;
 
                 $articles_arr[] = $article;
             }
