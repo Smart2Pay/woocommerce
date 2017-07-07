@@ -227,7 +227,7 @@ class Woocommerce_Smart2pay
          or $post->post_type != self::POST_TYPE_ORDER
          or !($order = wc_get_order( $post ))
          or !($payment_gateway_obj = WC_S2P_Helper::get_plugin_gateway_object())
-         or $order->payment_method != $payment_gateway_obj->id )
+         or $order->get_payment_method() != $payment_gateway_obj->id )
             return;
 
         add_meta_box( 'woocommerce-order-s2p-details', $this->__( 'Payment Method Details' ), array( $this, 'order_details_meta_box' ), self::POST_TYPE_ORDER, 'normal', 'default' );
@@ -265,10 +265,10 @@ class Woocommerce_Smart2pay
         /** @var WC_S2P_Methods_Model $methods_model */
         if( empty( $order )
          or !($payment_gateway_obj = WC_S2P_Helper::get_plugin_gateway_object())
-         or $payment_gateway_obj->id != $order->payment_method
+         or $payment_gateway_obj->id != $order->get_payment_method()
          or !($transactions_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Transactions_Model' ))
          or !($methods_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Methods_Model' ))
-         or !($transaction_arr = $transactions_model->get_details_fields( array( 'order_id' => $order->id ) ))
+         or !($transaction_arr = $transactions_model->get_details_fields( array( 'order_id' => $order->get_id() ) ))
          or empty( $transaction_arr['method_id'] )
          or empty( $transaction_arr['environment'] )
          or !($method_arr = $methods_model->get_details_fields( array( 'method_id' => $transaction_arr['method_id'], 'environment' => $transaction_arr['environment'] ) ))
@@ -532,8 +532,7 @@ class Woocommerce_Smart2pay
          or !Woocommerce_Smart2pay_Environment::validEnvironment( $wc_s2p_gateway->settings['environment'] )
          or !$s2p_method
          or empty( WC()->customer )
-         or empty( WC()->customer->country )
-         or !($country = WC()->customer->country)
+         or !($country = WC()->customer->get_billing_country())
          or !($methods_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Methods_Model' ))
          or !($method_details_arr = $methods_model->get_method_details_for_country( $s2p_method, $country, $wc_s2p_gateway->settings['environment'] ))
          or (

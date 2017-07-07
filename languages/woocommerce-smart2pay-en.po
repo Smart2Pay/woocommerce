@@ -2,14 +2,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: WooCommerce Smart2Pay Plugin v1.0.16\n"
 "POT-Creation-Date: 2016-02-17 17:44+0200\n"
-"PO-Revision-Date: 2016-02-17 18:00+0200\n"
+"PO-Revision-Date: 2017-07-07 14:42+0300\n"
 "Last-Translator: \n"
 "Language-Team: Smart2Pay <support@smart2pay.com>\n"
 "Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.4\n"
+"X-Generator: Poedit 2.0.1\n"
 "X-Poedit-Basepath: .\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-KeywordsList: __\n"
@@ -281,8 +281,8 @@ msgstr "Couldn't save payment methods' settings."
 
 #: includes/class-woocommerce-smart2pay-gateway.php:307
 #: includes/class-woocommerce-smart2pay-gateway.php:1153
-msgid "Please select a country first."
-msgstr "Please select a country first."
+msgid "Please select a country for billing details first."
+msgstr "Please select a country for billing details first."
 
 #: includes/class-woocommerce-smart2pay-gateway.php:314
 msgid "Couldn't initialize Methods model."

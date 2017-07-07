@@ -7,6 +7,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 {
+    const METHOD_SMARTCARDS_ID = 6;
+
     const ORDER_PAYMENT_META_KEY = 's2p_payment_method';
 
     private $has_errors = false;
@@ -39,15 +41,15 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         $this->has_errors = false;
 
         // Actions
-        add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'save_payment_details' ) );
+        add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( &$this, 'save_payment_details' ) );
 
         // Displaying Payment Methods in Plugin settings page
-        add_action( 'woocommerce_admin_field_smart2pay_methods', array( $this, 'smart2pay_methods_settings' ) );
+        add_action( 'woocommerce_admin_field_smart2pay_methods', array( &$this, 'smart2pay_methods_settings' ) );
 
-        //add_action( 'woocommerce_thankyou_cheque', array( $this, 'thankyou_page' ) );
+        //add_action( 'woocommerce_thankyou_cheque', array( &$this, 'thankyou_page' ) );
 
         // Customer Emails
-        //add_action( 'woocommerce_email_before_order_table', array( $this, 'email_instructions' ), 10, 3 );
+        //add_action( 'woocommerce_email_before_order_table', array( &$this, 'email_instructions' ), 10, 3 );
     }
 
     public function flow_parameters( $key, $val = null )
@@ -77,11 +79,26 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
     {
         $this->errors = array();
 
-        $this->validate_settings_fields();
+        $this->init_settings();
+
+        $post_data = $this->get_post_data();
+        foreach( $this->get_form_fields() as $key => $field )
+        {
+            if( 'title' !== $this->get_field_type( $field ) )
+            {
+                try
+                {
+                    $this->settings[ $key ] = $this->get_field_value( $key, $field, $post_data );
+                } catch ( Exception $e ) {
+                    $this->add_error( $e->getMessage() );
+                }
+            }
+        }
+
+        // $this->validate_settings_fields();
 
         /** @var WC_S2P_Configured_Methods_Model $configured_methods_model */
-        // validate $this->sanitized_fields array (WC validation depending on fields type)
-        if( empty( $this->sanitized_fields ) or !is_array( $this->sanitized_fields ) )
+        if( empty( $this->settings ) or !is_array( $this->settings ) )
             $this->add_error_message( WC_s2p()->__( 'Nothing to save...' ) );
 
         elseif( !($configured_methods_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Configured_Methods_Model' )) )
@@ -89,81 +106,81 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 
         else
         {
-            if( empty( $this->sanitized_fields['title'] ) )
+            if( empty( $this->settings['title'] ) )
                 $this->add_error_message( WC_s2p()->__( 'Please provide a Title.' ) );
 
-            if( empty( $this->sanitized_fields['environment'] )
-             or !Woocommerce_Smart2pay_Environment::validEnvironment( $this->sanitized_fields['environment'] ) )
+            if( empty( $this->settings['environment'] )
+             or !Woocommerce_Smart2pay_Environment::validEnvironment( $this->settings['environment'] ) )
                 $this->add_error_message( WC_s2p()->__( 'Please provide valid value for Environment.' ) );
 
-            if( empty( $this->sanitized_fields['return_url'] )
-             or !PHS_params::check_type( $this->sanitized_fields['return_url'], PHS_params::T_URL ) )
+            if( empty( $this->settings['return_url'] )
+             or !PHS_params::check_type( $this->settings['return_url'], PHS_params::T_URL ) )
                 $this->add_error_message( WC_s2p()->__( 'Please provide a valid Return URL.' ) );
 
             if( !$this->has_errors() )
             {
-                switch( $this->sanitized_fields['environment'] )
+                switch( $this->settings['environment'] )
                 {
                     case Woocommerce_Smart2pay_Environment::ENV_TEST:
-                        if( empty( $this->sanitized_fields['site_id_test'] ) )
-                            $this->sanitized_fields['site_id_test'] = 0;
+                        if( empty( $this->settings['site_id_test'] ) )
+                            $this->settings['site_id_test'] = 0;
                         else
-                            $this->sanitized_fields['site_id_test'] = intval( $this->sanitized_fields['site_id_test'] );
+                            $this->settings['site_id_test'] = intval( $this->settings['site_id_test'] );
 
-                        if( empty( $this->sanitized_fields['skin_id_test'] ) )
-                            $this->sanitized_fields['skin_id_test'] = 0;
+                        if( empty( $this->settings['skin_id_test'] ) )
+                            $this->settings['skin_id_test'] = 0;
                         else
-                            $this->sanitized_fields['skin_id_test'] = intval( $this->sanitized_fields['skin_id_test'] );
+                            $this->settings['skin_id_test'] = intval( $this->settings['skin_id_test'] );
 
-                        if( empty( $this->sanitized_fields['api_key_test'] ) )
+                        if( empty( $this->settings['api_key_test'] ) )
                             $this->add_error_message( WC_s2p()->__( 'Please provide a TEST API Key.' ) );
-                        if( empty( $this->sanitized_fields['site_id_test'] ) )
+                        if( empty( $this->settings['site_id_test'] ) )
                             $this->add_error_message( WC_s2p()->__( 'Please provide a TEST Site ID.' ) );
                     break;
 
                     case Woocommerce_Smart2pay_Environment::ENV_LIVE:
-                        if( empty( $this->sanitized_fields['site_id_live'] ) )
-                            $this->sanitized_fields['site_id_live'] = 0;
+                        if( empty( $this->settings['site_id_live'] ) )
+                            $this->settings['site_id_live'] = 0;
                         else
-                            $this->sanitized_fields['site_id_live'] = intval( $this->sanitized_fields['site_id_live'] );
+                            $this->settings['site_id_live'] = intval( $this->settings['site_id_live'] );
 
-                        if( empty( $this->sanitized_fields['skin_id_live'] ) )
-                            $this->sanitized_fields['skin_id_live'] = 0;
+                        if( empty( $this->settings['skin_id_live'] ) )
+                            $this->settings['skin_id_live'] = 0;
                         else
-                            $this->sanitized_fields['skin_id_live'] = intval( $this->sanitized_fields['skin_id_live'] );
+                            $this->settings['skin_id_live'] = intval( $this->settings['skin_id_live'] );
 
-                        if( empty( $this->sanitized_fields['api_key_live'] ) )
+                        if( empty( $this->settings['api_key_live'] ) )
                             $this->add_error_message( WC_s2p()->__( 'Please provide a LIVE API Key.' ) );
-                        if( empty( $this->sanitized_fields['site_id_live'] ) )
+                        if( empty( $this->settings['site_id_live'] ) )
                             $this->add_error_message( WC_s2p()->__( 'Please provide a LIVE Site ID.' ) );
                     break;
                 }
             }
 
-            if( empty( $this->sanitized_fields['methods_display_mode'] )
-             or !Woocommerce_Smart2pay_Displaymode::validDisplayMode( $this->sanitized_fields['methods_display_mode'] ) )
+            if( empty( $this->settings['methods_display_mode'] )
+             or !Woocommerce_Smart2pay_Displaymode::validDisplayMode( $this->settings['methods_display_mode'] ) )
                 $this->add_error_message( WC_s2p()->__( 'Please provide valid value for Methods display mode.' ) );
 
-            if( !WC_S2P_Helper::check_checkbox_value( $this->sanitized_fields['product_description_ref'] )
-            and empty( $this->sanitized_fields['product_description_custom'] ) )
+            if( !WC_S2P_Helper::check_checkbox_value( $this->settings['product_description_ref'] )
+            and empty( $this->settings['product_description_custom'] ) )
                 $this->add_error_message( WC_s2p()->__( 'Please provide a Custom product description.' ) );
 
-            if( empty( $this->sanitized_fields['grid_column_number'] ) )
-                $this->sanitized_fields['grid_column_number'] = 0;
+            if( empty( $this->settings['grid_column_number'] ) )
+                $this->settings['grid_column_number'] = 0;
             else
-                $this->sanitized_fields['grid_column_number'] = intval( $this->sanitized_fields['grid_column_number'] );
+                $this->settings['grid_column_number'] = intval( $this->settings['grid_column_number'] );
         }
 
         $s2p_we_have_methods = PHS_params::_p( 's2p_we_have_methods', PHS_params::T_INT );
 
         $configured_methods_error = '';
         if( !empty( $s2p_we_have_methods )
-        and Woocommerce_Smart2pay_Environment::validEnvironment( $this->sanitized_fields['environment'] ) )
+        and Woocommerce_Smart2pay_Environment::validEnvironment( $this->settings['environment'] ) )
         {
             /** @var WC_S2P_Methods_Model $methods_model */
             $methods_list_arr = array();
             if( ($methods_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Methods_Model' )) )
-                $methods_list_arr = $methods_model->get_db_available_methods( $this->sanitized_fields['environment'] );
+                $methods_list_arr = $methods_model->get_db_available_methods( $this->settings['environment'] );
 
             $enabled_methods_arr = PHS_params::_p( 's2p_enabled_methods', PHS_params::T_ARRAY, array( 'type' => PHS_params::T_INT ) );
             $s2p_priority_arr = PHS_params::_p( 's2p_priority', PHS_params::T_ARRAY, array( 'type' => PHS_params::T_INT ) );
@@ -177,7 +194,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 
                 $configured_method_arr = array();
                 $configured_method_arr['method_id'] = $method_id;
-                $configured_method_arr['environment'] = $this->sanitized_fields['environment'];
+                $configured_method_arr['environment'] = $this->settings['environment'];
                 $configured_method_arr['enabled'] = (!empty( $enabled_methods_arr[$method_id] )?1:0);
                 $configured_method_arr['surcharge_percent'] = (!empty( $s2p_surcharge_arr[$method_id] )?$s2p_surcharge_arr[$method_id]:0);
                 $configured_method_arr['surcharge_amount'] = (!empty( $s2p_fixed_amount_arr[$method_id] )?$s2p_fixed_amount_arr[$method_id]:0);
@@ -186,7 +203,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 $configured_methods_arr[] = $configured_method_arr;
             }
 
-            if( !$configured_methods_model->save_configured_methods( $configured_methods_arr, $this->sanitized_fields['environment'] ) )
+            if( !$configured_methods_model->save_configured_methods( $configured_methods_arr, $this->settings['environment'] ) )
             {
                 if( $configured_methods_model->has_error() )
                     $configured_methods_error = $configured_methods_model->get_error_message();
@@ -224,15 +241,17 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         if( $this->has_errors() )
             return false;
 
-        update_option( $this->plugin_id . $this->id . '_settings', $this->sanitized_fields );
+        $save_result = update_option( $this->get_option_key(), $this->settings );
+
         $this->init_settings();
 
-        return true;
+        return $save_result;
     }
 
     public function add_error_message( $msg )
     {
         WC_Admin_Settings::add_error( $msg );
+        //$this->add_error( $msg );
         $this->has_errors = true;
 
         //if( empty( $this->errors ) or !is_array( $this->errors ) )
@@ -302,7 +321,8 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
      */
     public function payment_fields()
     {
-        if( empty( WC()->customer ) or empty( WC()->customer->country ) )
+        if( empty( WC()->customer )
+         or empty( WC()->customer->get_billing_country() ) )
         {
             echo WC_s2p()->__( 'Please select a country first.' );
             return;
@@ -331,7 +351,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         and !($s2p_method = WC_s2p()->session_s2p_method()) )
             $s2p_method = 0;
 
-        if( !($methods_list_arr = $methods_model->get_available_country_methods( WC()->customer->country )) )
+        if( !($methods_list_arr = $methods_model->get_available_country_methods( WC()->customer->get_billing_country() )) )
             $methods_list_arr = array();
 
         if( empty( $methods_list_arr ) )
@@ -360,6 +380,8 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 
             if( !jq_elem || !jq_elem.is(':checked' ) )
                 return;
+
+            console.log( 'refresgh' );
 
             jQuery( document.body ).trigger( 'update_checkout' );
         }
@@ -392,7 +414,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 ?>
                 <td style="vertical-align: top !important;"><label style="width: 100%;" for="s2p-method-chck-<?php echo $method_arr['method_id'] ?>">
                     <div class="s2p-method-logo-name">
-                    <input type="radio" name="s2p_method" id="s2p-method-chck-<?php echo $method_arr['method_id'] ?>" value="<?php echo $method_arr['method_id'] ?>" onfocus="this.blur()" <?php echo ($s2p_method==$method_arr['method_id']?'checked="checked"':'')?> onchange="s2p_refresh_checkout( this )" /><br/>
+                    <input type="radio" name="s2p_method" id="s2p-method-chck-<?php echo $method_arr['method_id'] ?>" value="<?php echo $method_arr['method_id'] ?>" onfocus="this.blur()" <?php echo ($s2p_method==$method_arr['method_id']?'checked="checked"':'')?> onclick="s2p_refresh_checkout( this )" /><br/>
                     <?php
 
                         if( $this->settings['methods_display_mode'] == Woocommerce_Smart2pay_Displaymode::MODE_LOGO
@@ -431,7 +453,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 ?>
                 <tr>
                     <td style="width:25px; vertical-align: middle;">
-                        <input type="radio" name="s2p_method" id="s2p-method-chck-<?php echo $method_arr['method_id'] ?>" value="<?php echo $method_arr['method_id'] ?>" onfocus="this.blur()" <?php echo ($s2p_method==$method_arr['method_id']?'checked="checked"':'')?> onchange="s2p_refresh_checkout( this )" />
+                        <input type="radio" name="s2p_method" id="s2p-method-chck-<?php echo $method_arr['method_id'] ?>" value="<?php echo $method_arr['method_id'] ?>" onfocus="this.blur()" <?php echo ($s2p_method==$method_arr['method_id']?'checked="checked"':'')?> onclick="s2p_refresh_checkout( this )" />
                     </td>
                     <td><label style="width: 100%;" for="s2p-method-chck-<?php echo $method_arr['method_id'] ?>">
                         <div class="s2p-method-logo-name">
@@ -870,12 +892,13 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 
             function s2p_config_js_select_all()
             {
-                form_obj = document.getElementById( 'mainform' );
+                var form_obj = document.getElementById( 'mainform' );
                 if( form_obj && form_obj.elements && form_obj.elements.length )
                 {
-                    for( i = 0; i < form_obj.elements.length; i++ )
+                    for( var i = 0; i < form_obj.elements.length; i++ )
                     {
-                        if( form_obj.elements[i].type == 'checkbox' && form_obj.elements[i].name.substring( 0, 20 ) == 's2p_enabled_methods[' )
+                        if( form_obj.elements[i].type == 'checkbox'
+                         && form_obj.elements[i].name.substring( 0, 20 ) == 's2p_enabled_methods[' )
                         {
                             if( !form_obj.elements[i].checked )
                                 form_obj.elements[i].click();
@@ -885,12 +908,13 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             }
             function s2p_config_js_deselect_all()
             {
-                form_obj = document.getElementById( 'mainform' );
+                var form_obj = document.getElementById( 'mainform' );
                 if( form_obj && form_obj.elements && form_obj.elements.length )
                 {
-                    for( i = 0; i < form_obj.elements.length; i++ )
+                    for( var i = 0; i < form_obj.elements.length; i++ )
                     {
-                        if( form_obj.elements[i].type == 'checkbox' && form_obj.elements[i].name.substring( 0, 20 ) == 's2p_enabled_methods[' )
+                        if( form_obj.elements[i].type == 'checkbox'
+                         && form_obj.elements[i].name.substring( 0, 20 ) == 's2p_enabled_methods[' )
                         {
                             if( form_obj.elements[i].checked )
                                 form_obj.elements[i].click();
@@ -900,12 +924,13 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             }
             function s2p_config_js_invert()
             {
-                form_obj = document.getElementById( 'mainform' );
+                var form_obj = document.getElementById( 'mainform' );
                 if( form_obj && form_obj.elements && form_obj.elements.length )
                 {
-                    for( i = 0; i < form_obj.elements.length; i++ )
+                    for( var i = 0; i < form_obj.elements.length; i++ )
                     {
-                        if( form_obj.elements[i].type == 'checkbox' && form_obj.elements[i].name.substring( 0, 20 ) == 's2p_enabled_methods[' )
+                        if( form_obj.elements[i].type == 'checkbox'
+                         && form_obj.elements[i].name.substring( 0, 20 ) == 's2p_enabled_methods[' )
                         {
                             form_obj.elements[i].click();
                         }
@@ -1083,7 +1108,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             'message_data_2' => array(
                 'title' => WC_s2p()->__( 'Success message' ),
                 'type' => 'textarea',
-                'default' => WC_s2p()->__( 'Thank you, the transaction has been processed successfuly. After we receive the final confirmation, we will release the goods.' ),
+                'default' => WC_s2p()->__( 'Thank you, the transaction has been processed successfully. After we receive the final confirmation, we will release the goods.' ),
             ),
             'message_data_4' => array(
                 'title' => WC_s2p()->__( 'Failed message' ),
@@ -1093,7 +1118,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             'message_data_3' => array(
                 'title' => WC_s2p()->__( 'Cancelled message' ),
                 'type' => 'textarea',
-                'default' => WC_s2p()->__( 'You have canceled the payment.' ),
+                'default' => WC_s2p()->__( 'You have cancelled the payment.' ),
             ),
             'message_data_7' => array(
                 'title' => WC_s2p()->__( 'Pending message' ),
@@ -1128,9 +1153,11 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         if( defined( 'WOOCOMMERCE_CHECKOUT' ) and constant( 'WOOCOMMERCE_CHECKOUT' ) )
             $this->payment_flow['in_payment_flow'] = true;
 
-        if( empty( WC()->checkout()->posted )
-         or empty( WC()->checkout()->posted['payment_method'] )
-         or WC()->checkout()->posted['payment_method'] != $this->id )
+        $posted_data = WC()->checkout()->get_posted_data();
+
+        if( empty( $posted_data )
+         or empty( $posted_data['payment_method'] )
+         or $posted_data['payment_method'] != $this->id )
             return false;
 
         if( empty( $this->settings['environment'] )
@@ -1148,16 +1175,15 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         }
 
         if( empty( WC()->customer )
-         or empty( WC()->customer->country ) )
+         or !($billing_country = WC()->customer->get_billing_country()) )
         {
-            wc_add_notice( WC_s2p()->__( 'Please select a country first.' ), 'error' );
+            wc_add_notice( WC_s2p()->__( 'Please select a country for billing details first.' ), 'error' );
             return false;
         }
 
         /** @var WC_S2P_Methods_Model $methods_model */
-        $country = WC()->customer->country;
         if( !($methods_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Methods_Model' ))
-         or !($method_details_arr = $methods_model->get_method_details_for_country( $s2p_method, $country, $this->settings['environment'] )) )
+         or !($method_details_arr = $methods_model->get_method_details_for_country( $s2p_method, $billing_country, $this->settings['environment'] )) )
         {
             wc_add_notice( WC_s2p()->__( 'Couldn\'t get payment method details.' ), 'error' );
             return false;
@@ -1223,7 +1249,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             return array();
         }
 
-        $order_amount = number_format( $order->order_total, 2, '.', '' );
+        $order_amount = number_format( $order->get_total(), 2, '.', '' );
 
         // Get order items and send it as articles...
         if( !($products_arr = WC_S2P_Helper::get_order_products( $order, $order_amount ))
@@ -1248,9 +1274,9 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         }
 
         $transaction_arr['site_id'] = $site_id;
-        $transaction_arr['order_id'] = $order->id;
+        $transaction_arr['order_id'] = $order->get_id();
         $transaction_arr['amount'] = $order_amount;
-        $transaction_arr['currency'] = $order->get_order_currency();
+        $transaction_arr['currency'] = $order->get_currency();
 
         if( !($transaction_db_arr = $transactions_model->save_transaction( $transaction_arr )) )
         {
@@ -1259,44 +1285,45 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         }
 
         if( $this->settings['environment'] != Woocommerce_Smart2pay_Environment::ENV_DEMO )
-            $merchant_transaction_id = $order->id;
+            $merchant_transaction_id = $order->get_id();
         else
-            $merchant_transaction_id = WC_S2P_Helper::convert_to_demo_merchant_transaction_id( $order->id );
+            $merchant_transaction_id = WC_S2P_Helper::convert_to_demo_merchant_transaction_id( $order->get_id() );
 
         if( $this->check_settings_checkbox_value( 'product_description_ref' ) )
-            $description = WC_s2p()->__( 'Ref. no.: ' ).$order->id;
+            $description = WC_s2p()->__( 'Ref. no.: ' ).$order->get_id();
         else
             $description = $this->settings['product_description_custom'];
 
         $payment_arr = array();
         $payment_arr['merchanttransactionid'] = $merchant_transaction_id;
         $payment_arr['amount'] = $order_centimes;
-        $payment_arr['currency'] = $order->get_order_currency();
+        $payment_arr['currency'] = $order->get_currency();
         $payment_arr['methodid'] = $method_details['method_id'];
         $payment_arr['description'] = $description;
         $payment_arr['customer'] = array(
-            'email' => $order->billing_email,
-            'firstname' => $order->shipping_first_name,
-            'lastname' => $order->shipping_last_name,
-            'phone' => $order->billing_phone,
-            'company' => $order->billing_company,
+            'email' => $order->get_billing_email(),
+            'firstname' => $order->get_billing_first_name(),
+            'lastname' => $order->get_billing_last_name(),
+            'phone' => $order->get_billing_phone(),
+            'company' => $order->get_billing_company(),
         );
 
         $street_str = '';
         $street_number_str = '';
-        if( strlen( $order->billing_address_1 ) > 100 )
+        $billing_address_1 = $order->get_billing_address_1();
+        if( strlen( $billing_address_1 ) > 100 )
         {
-            $street_str = WC_S2P_Helper::mb_substr( $order->billing_address_1, 0, 100 );
-            $street_number_str = WC_S2P_Helper::mb_substr( $order->billing_address_1, 100 );
+            $street_str = WC_S2P_Helper::mb_substr( $billing_address_1, 0, 100 );
+            $street_number_str = WC_S2P_Helper::mb_substr( $billing_address_1, 100 );
         }
 
-        $street_number_str .= $order->billing_address_2;
+        $street_number_str .= $order->get_billing_address_2();
 
         $payment_arr['billingaddress'] = array(
-            'country' => $order->billing_country, // ISO 2 chars country code
-            'city' => $order->billing_city,
-            'zipcode' => $order->billing_postcode,
-            'state' => $order->billing_state,
+            'country' => $order->get_billing_country(), // ISO 2 chars country code
+            'city' => $order->get_billing_city(),
+            'zipcode' => $order->get_billing_postcode(),
+            'state' => $order->get_billing_state(),
             'street' => $street_str,
             'streetnumber' => $street_number_str,
             //'housenumber' => '',
@@ -1305,19 +1332,20 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 
         $street_str = '';
         $street_number_str = '';
-        if( strlen( $order->shipping_address_1 ) > 100 )
+        $shipping_address_1 = $order->get_shipping_address_1();
+        if( strlen( $shipping_address_1 ) > 100 )
         {
-            $street_str = WC_S2P_Helper::mb_substr( $order->shipping_address_1, 0, 100 );
-            $street_number_str = WC_S2P_Helper::mb_substr( $order->shipping_address_1, 100 );
+            $street_str = WC_S2P_Helper::mb_substr( $shipping_address_1, 0, 100 );
+            $street_number_str = WC_S2P_Helper::mb_substr( $shipping_address_1, 100 );
         }
 
-        $street_number_str .= $order->shipping_address_2;
+        $street_number_str .= $order->get_shipping_address_2();
 
         $payment_arr['shippingaddress'] = array(
-            'country' => $order->shipping_country,
-            'city' => $order->shipping_city,
-            'zipcode' => $order->shipping_postcode,
-            'state' => $order->shipping_state,
+            'country' => $order->get_shipping_country(),
+            'city' => $order->get_shipping_city(),
+            'zipcode' => $order->get_shipping_postcode(),
+            'state' => $order->get_shipping_state(),
             'street' => $street_str,
             'streetnumber' => $street_number_str,
             //'housenumber' => '',
@@ -1326,17 +1354,30 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 
         $payment_arr['articles'] = $products_arr;
 
-        if( !($payment_request = $sdk_interface->init_payment( $payment_arr, $this->settings )) )
+        if( $method_details['method_id'] == self::METHOD_SMARTCARDS_ID )
         {
-            if( !$sdk_interface->has_error() )
-                wc_add_notice( WC_s2p()->__( 'Couldn\'t initiate request to server.' ), 'error' );
-            else
-                wc_add_notice( WC_s2p()->__( 'Call error: ' ).$sdk_interface->get_error_message(), 'error' );
-            return array();
+            if( !($payment_request = $sdk_interface->card_init_payment( $payment_arr, $this->settings )) )
+            {
+                if( !$sdk_interface->has_error() )
+                    wc_add_notice( WC_s2p()->__( 'Couldn\'t initiate request to server.' ), 'error' );
+                else
+                    wc_add_notice( WC_s2p()->__( 'Call error: ' ).$sdk_interface->get_error_message(), 'error' );
+                return array();
+            }
+        } else
+        {
+            if( !($payment_request = $sdk_interface->init_payment( $payment_arr, $this->settings )) )
+            {
+                if( !$sdk_interface->has_error() )
+                    wc_add_notice( WC_s2p()->__( 'Couldn\'t initiate request to server.' ), 'error' );
+                else
+                    wc_add_notice( WC_s2p()->__( 'Call error: ' ).$sdk_interface->get_error_message(), 'error' );
+                return array();
+            }
         }
 
         $transaction_arr = array();
-        $transaction_arr['order_id'] = $order->id;
+        $transaction_arr['order_id'] = $order->get_id();
         $transaction_arr['payment_id'] = (!empty( $payment_request['id'] )?$payment_request['id']:0);
         $transaction_arr['payment_status'] = ((!empty( $payment_request['status'] ) and !empty( $payment_request['status']['id'] ))?$payment_request['status']['id']:0);
 
@@ -1358,14 +1399,15 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         if( !($transaction_db_arr = $transactions_model->save_transaction( $transaction_arr )) )
         {
             // Just log the error and don't break payment flow...
-            WC_s2p()->logger()->log( 'Error updating transaction for order ['.$order->id.'].' );
+            WC_s2p()->logger()->log( 'Error updating transaction for order ['.$order->get_id().'].' );
         }
 
         // Mark as on-hold (we're awaiting the cheque)
         $order->update_status( $this->settings['order_status'], WC_s2p()->__( 'Initiating payment...' ) );
 
         // Reduce stock levels
-        $order->reduce_order_stock();
+        // $order->reduce_order_stock();
+        wc_reduce_stock_levels( $order );
 
         // Remove cart
         WC()->cart->empty_cart();

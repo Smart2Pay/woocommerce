@@ -22,6 +22,9 @@ class WC_S2P_Logs extends WC_S2P_Model
 
     public function environment( $environment = null )
     {
+        if( empty( $this->environment ) )
+            $this->environment = WC_S2P_Helper::get_plugin_settings( 'environment' );
+
         if( $environment === null )
             return $this->environment;
 
@@ -60,6 +63,7 @@ class WC_S2P_Logs extends WC_S2P_Model
         $insert_arr['log_type'] = $params['type'];
         $insert_arr['log_source_file'] = $params['file'];
         $insert_arr['log_source_file_line'] = $params['line'];
+        $insert_arr['log_created'] = date( WC_S2P_Helper::SQL_DATETIME );
 
         if( !($sql = $this->quick_insert( $insert_arr ))
          or !$wpdb->query( $sql )
@@ -72,23 +76,6 @@ class WC_S2P_Logs extends WC_S2P_Model
 
         $insert_arr['log_id'] = $wpdb->insert_id;
         $insert_arr['<new_in_db>'] = true;
-
-        return $insert_arr;
-    }
-
-    /**
-     * Overwrite this method if you want to change data array right before inserting it to database...
-     *
-     * @param array $insert_arr
-     * @param array $params
-     *
-     * @return array|bool Changed array to be saved in database. If returns false will stop insertion.
-     */
-    public function insert_before( $insert_arr, $params )
-    {
-        $cdate = date( WC_S2P_Helper::SQL_DATETIME );
-
-        $insert_arr['log_created'] = $cdate;
 
         return $insert_arr;
     }

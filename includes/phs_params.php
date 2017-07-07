@@ -1,6 +1,6 @@
 <?php
 
-//! \version 1.70
+//! \version 1.71
 
 class PHS_params
 {
@@ -13,6 +13,18 @@ class PHS_params
 
     function __construct()
     {
+    }
+
+    static function get_valid_types()
+    {
+        return array(
+            self::T_ASIS, self::T_INT, self::T_FLOAT, self::T_ALPHANUM, self::T_SAFEHTML, self::T_NOHTML, self::T_EMAIL,
+            self::T_REMSQL_CHARS, self::T_ARRAY, self::T_DATE, self::T_URL, self::T_BOOL, );
+    }
+
+    static function valid_type( $type )
+    {
+        return in_array( $type, self::get_valid_types() );
     }
 
     static function check_type( $val, $type, $extra = false )
@@ -59,13 +71,17 @@ class PHS_params
 
     static function set_type( $val, $type, $extra = false )
     {
+        if( $val === null )
+            return null;
+        
         if( empty( $extra ) or !is_array( $extra ) )
             $extra = array();
 
         if( empty( $extra['trim_before'] ) )
             $extra['trim_before'] = false;
 
-        if( !empty( $extra['trim_before'] ) )
+        if( !empty( $extra['trim_before'] )
+        and is_scalar( $val ) )
             $val = trim( $val );
 
         switch( $type )
@@ -96,12 +112,12 @@ class PHS_params
 
                 if( $val != '' )
                 {
-                    if( function_exists( 'bcmul' ) )
+                    if( @function_exists( 'bcmul' ) )
                     {
-                        $val = bcmul( $val, 1, $extra['digits'] );
+                        $val = @bcmul( $val, 1, $extra['digits'] );
                     } else
                     {
-                        $val = number_format( $val, $extra['digits'], '.', '' );
+                        $val = @number_format( $val, $extra['digits'], '.', '' );
                     }
 
                     if( strstr( $val, '.' ) !== false )

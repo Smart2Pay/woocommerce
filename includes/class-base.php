@@ -59,5 +59,7 @@ class WC_S2P_Base
 
         $this->error_code = $error_arr['code'];
         $this->error_msg = $error_arr['message'];
+
+        return true;
     }
 }

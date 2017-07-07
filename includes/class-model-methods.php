@@ -193,7 +193,11 @@ class WC_S2P_Methods_Model extends WC_S2P_Model
         $list_arr['table_name'] = $table_name;
         $list_arr['table_index'] = $table_index;
 
-        $list_arr['fields']['country_code'] = strtoupper( $country );
+        //$list_arr['fields']['country_code'] = strtoupper( $country );
+        $list_arr['extra_sql'] = '('.$table_name.'.country_code = \'AA\' OR '.
+                                 $table_name.'.country_code = \''.strtoupper( $country ).'\')';
+
+        $list_arr['group_by'] = $table_name.'.method_id';
 
         if( !($country_methods_arr = $this->get_list( $list_arr ))
          or !is_array( $country_methods_arr ) )
@@ -269,9 +273,12 @@ class WC_S2P_Methods_Model extends WC_S2P_Model
         $params_arr = array();
         $params_arr['table_name'] = $table_name;
         $params_arr['table_index'] = $table_index;
+        $params_arr['group_by'] = $table_name.'.method_id';
+        $params_arr['extra_sql'] = '('.$table_name.'.country_code = \'AA\' OR '.
+            $table_name.'.country_code = \''.strtoupper( $country ).'\')';
 
         $check_arr = array();
-        $check_arr['country_code'] = strtoupper( $country );
+        //$check_arr['country_code'] = strtoupper( $country );
         $check_arr['method_id'] = $method_id;
 
         if( !($country_methods_arr = $this->get_details_fields( $check_arr, $params_arr ))

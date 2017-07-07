@@ -273,6 +273,8 @@ class Woocommerce_Smart2pay_Installer
 
         $wpdb->hide_errors();
 
+        $wpdb->query( "TRUNCATE {$wpdb->prefix}smart2pay_country;" );
+
         if( !($wpdb->query( "INSERT INTO {$wpdb->prefix}smart2pay_country (`code`, `name`) VALUES
             ('AD', 'Andorra'),
             ('AE', 'United Arab Emirates'),

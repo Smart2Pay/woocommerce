@@ -70,7 +70,9 @@ class Woocommerce_Smart2pay_Loader {
          or !@file_exists( WC_s2p()->plugin_path().$this->_models_arr[$class] ) )
             return false;
 
+        ob_start();
         include_once( WC_s2p()->plugin_path().$this->_models_arr[$class] );
+        ob_end_clean();
 
         if( !class_exists( $class, false ) )
             return false;

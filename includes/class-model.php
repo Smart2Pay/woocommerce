@@ -586,6 +586,8 @@ abstract class WC_S2P_Model extends WC_S2P_Base
             $params['extra_sql'] = '';
         if( empty( $params['order_by'] ) )
             $params['order_by'] = '';
+        if( empty( $params['group_by'] ) )
+            $params['group_by'] = '';
 
         if( !isset( $params['limit'] ) )
             $params['limit'] = 1;
@@ -632,6 +634,7 @@ abstract class WC_S2P_Model extends WC_S2P_Base
         }
 
         if( !($results = $wpdb->get_results( 'SELECT '.$params['details'].' FROM '.$table_name.' WHERE '.$params['extra_sql'].
+                               (!empty( $params['group_by'] )?' GROUP BY '.$params['group_by']:'').
                                (!empty( $params['order_by'] )?' ORDER BY '.$params['order_by']:'').
                                (isset( $params['limit'] )?' LIMIT 0, '.$params['limit']:''), ARRAY_A ))
          or !is_array( $results ) )
