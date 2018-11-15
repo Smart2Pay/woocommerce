@@ -24,14 +24,41 @@ class Woocommerce_Smart2pay_Installer
 {
     const VERSION_OPTION = 'wc_smart2pay_version';
 
+    private static $_updater_err = array();
+
     /** @var array DB updates that need to be run */
     private static $db_updates = array(
-        // '1.0.1' => 'updates/update-1.0.1.php',
+        // '{version}' => 'update_script.php' // update script in {Plugin_dir}/includes/updates
+        '1.2.0' => 'update-to-1.2.0.php',
     );
 
     public static function init()
     {
         add_action( 'admin_init', array( __CLASS__, 'check_version' ), 5 );
+    }
+
+    private static function _updater_has_errors()
+    {
+        return (empty( self::$_updater_err )?false:true);
+    }
+
+    private static function _reset_updater_errors()
+    {
+        self::$_updater_err = array();
+    }
+
+    /**
+     * Woocommerce_Smart2pay_Admin_Notices might not be available at this point, so send 'error' or 'update' as $type
+     *
+     * @param string $message Message body
+     * @param string $type Woocommerce_Smart2pay_Admin_Notices::TYPE_ERROR = 'error', Woocommerce_Smart2pay_Admin_Notices::TYPE_SUCCESS = 'update';
+     */
+    private static function _add_updater_error( $message, $type = 'error' )
+    {
+        self::$_updater_err[] = array(
+            'notice_type' => $type,
+            'message' => $message,
+        );
     }
 
     public static function check_version()
@@ -56,10 +83,26 @@ class Woocommerce_Smart2pay_Installer
 
         foreach( self::$db_updates as $version => $updater )
         {
+            if( !@file_exists( WC_S2P_PLUGIN_DIR.'includes/updates/'.$updater ) )
+                continue;
+
             if( empty( $current_version )
              or version_compare( $current_version, $version, '<' ) )
             {
-                include( $updater );
+                self::_reset_updater_errors();
+
+                include( WC_S2P_PLUGIN_DIR.'includes/updates/'.$updater );
+
+                if( self::_updater_has_errors()
+                and !empty( self::$_updater_err ) )
+                {
+                    foreach( self::$_updater_err as $error_arr )
+                    {
+                        Woocommerce_Smart2pay_Admin_Notices_Later::add_notice( 'custom_notice', $error_arr );
+                    }
+
+                    return false;
+                }
             }
         }
 

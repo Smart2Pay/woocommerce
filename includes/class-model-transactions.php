@@ -195,6 +195,11 @@ class WC_S2P_Transactions_Model extends WC_S2P_Model
                 'default' => '',
                 'editable' => true,
             ),
+            'use_3dsecure' => array(
+                'type' => PHS_params::T_INT,
+                'default' => 0,
+                'editable' => true,
+            ),
             'extra_data' => array(
                 'type' => PHS_params::T_NOHTML,
                 'default' => '',

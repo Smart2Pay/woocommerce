@@ -320,10 +320,16 @@ class Woocommerce_Smart2pay
         echo $data_header;
 
         if( $to_admin )
+        {
             echo sprintf( $rows_template,
                           $this->__( 'Environment' ),
-                          (!empty($transaction_arr['environment']) ? ucfirst( $transaction_arr['environment'] ): $this->__( 'N/A' ))
+                          (!empty( $transaction_arr['environment'] ) ? ucfirst( $transaction_arr['environment'] ) : $this->__( 'N/A' ))
             );
+            echo sprintf( $rows_template,
+                          $this->__( '3DSecure' ),
+                          (!empty( $transaction_arr['use_3dsecure'] ) ? $this->__( 'Yes' ) : $this->__( 'No' ))
+            );
+        }
 
         echo sprintf( $rows_template,
                       $this->__( 'Payment Method' ),
@@ -420,12 +426,12 @@ class Woocommerce_Smart2pay
         }
 
         if( !defined( 'S2P_SDK_DIR_METHODS' )
-         or !@file_exists( S2P_SDK_DIR_METHODS.'s2p_sdk_meth_payments.inc.php' ) )
+         or !@file_exists( S2P_SDK_DIR_METHODS.'S2P_SDK_Meth_Payments.php' ) )
         {
             return WC_s2p()->__( 'Couldn\'t locate Smart2Pay SDK files.' );
         }
 
-        include_once( S2P_SDK_DIR_METHODS.'s2p_sdk_meth_payments.inc.php' );
+        include_once( S2P_SDK_DIR_METHODS.'S2P_SDK_Meth_Payments.php' );
 
         $status_converter = array(
             \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_OPEN => \S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER,

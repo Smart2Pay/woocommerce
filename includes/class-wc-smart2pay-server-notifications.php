@@ -38,9 +38,9 @@ class WC_S2P_Server_Notifications extends WC_S2P_Base
                 'environment' => $api_credentials['environment'],
             ) );
 
-        include_once( S2P_SDK_DIR_CLASSES . 's2p_sdk_notification.inc.php' );
-        include_once( S2P_SDK_DIR_CLASSES . 's2p_sdk_helper.inc.php' );
-        include_once( S2P_SDK_DIR_METHODS . 's2p_sdk_meth_payments.inc.php' );
+        include_once( S2P_SDK_DIR_CLASSES . 'S2P_SDK_Notification.php' );
+        include_once( S2P_SDK_DIR_CLASSES . 'S2P_SDK_Helper.php' );
+        include_once( S2P_SDK_DIR_METHODS . 'S2P_SDK_Meth_Payments.php' );
 
         if( !defined( 'S2P_SDK_NOTIFICATION_IDENTIFIER' ) )
             define( 'S2P_SDK_NOTIFICATION_IDENTIFIER', microtime( true ) );
@@ -197,6 +197,7 @@ class WC_S2P_Server_Notifications extends WC_S2P_Base
                     case S2P_SDK\S2P_SDK_Meth_Payments::STATUS_PENDING_PROVIDER:
                     break;
 
+                    case S2P_SDK\S2P_SDK_Meth_Payments::STATUS_CAPTURED:
                     case S2P_SDK\S2P_SDK_Meth_Payments::STATUS_SUCCESS:
                         $order->update_status( $plugin_settings['order_status_on_2'], WC_s2p()->__( 'Payment success!' ) );
                         $order->payment_complete();

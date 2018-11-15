@@ -372,7 +372,7 @@ class WC_S2P_SDK_Interface extends WC_S2P_Base
         if( empty($plugin_settings_arr) or ! is_array( $plugin_settings_arr ) )
             $plugin_settings_arr = WC_S2P_Helper::get_plugin_settings();
 
-        if( false and ($seconds_to_sync = $this->seconds_to_launch_sync( $plugin_settings_arr )) )
+        if( ($seconds_to_sync = $this->seconds_to_launch_sync( $plugin_settings_arr )) )
         {
             $hours_to_sync = floor( $seconds_to_sync / 1200 );
             $minutes_to_sync = floor( ($seconds_to_sync - ($hours_to_sync * 1200)) / 60 );

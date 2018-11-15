@@ -381,8 +381,6 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             if( !jq_elem || !jq_elem.is(':checked' ) )
                 return;
 
-            console.log( 'refresgh' );
-
             jQuery( document.body ).trigger( 'update_checkout' );
         }
         </script>
@@ -1065,6 +1063,12 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                 'title' => WC_s2p()->__( 'Order Related Settings' ),
                 'type' => 'title',
             ),
+            '3dsecure' => array(
+                'title' => WC_s2p()->__( 'Use 3DSecure' ),
+                'type' => 'checkbox',
+                'label' => WC_s2p()->__( 'Use 3DSecure for SmartCards payment method.' ),
+                'default' => 'no',
+            ),
             'order_status' => array(
                 'title' => WC_s2p()->__( 'New order status' ),
                 'type' => 'select',
@@ -1251,6 +1255,11 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 
         $order_amount = number_format( $order->get_total(), 2, '.', '' );
 
+        $use_3dsecure = false;
+        if( $method_details['method_id'] == self::METHOD_SMARTCARDS_ID
+        and ($use_3dsecure = $this->check_settings_checkbox_value( '3dsecure' )) )
+            $use_3dsecure = true;
+
         // Get order items and send it as articles...
         if( !($products_arr = WC_S2P_Helper::get_order_products( $order, $order_amount ))
          or !is_array( $products_arr ) )
@@ -1277,6 +1286,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         $transaction_arr['order_id'] = $order->get_id();
         $transaction_arr['amount'] = $order_amount;
         $transaction_arr['currency'] = $order->get_currency();
+        $transaction_arr['use_3dsecure'] = (!empty( $use_3dsecure )?1:0);
 
         if( !($transaction_db_arr = $transactions_model->save_transaction( $transaction_arr )) )
         {
@@ -1356,6 +1366,8 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 
         if( $method_details['method_id'] == self::METHOD_SMARTCARDS_ID )
         {
+            $payment_arr['3dsecure'] = ($use_3dsecure?true:false);
+
             if( !($payment_request = $sdk_interface->card_init_payment( $payment_arr, $this->settings )) )
             {
                 if( !$sdk_interface->has_error() )
@@ -1402,7 +1414,6 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             WC_s2p()->logger()->log( 'Error updating transaction for order ['.$order->get_id().'].' );
         }
 
-        // Mark as on-hold (we're awaiting the cheque)
         $order->update_status( $this->settings['order_status'], WC_s2p()->__( 'Initiating payment...' ) );
 
         // Reduce stock levels

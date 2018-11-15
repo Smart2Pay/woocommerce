@@ -175,6 +175,12 @@ if( !class_exists( 'Woocommerce_Smart2pay_Admin_Notices', false ) )
             self::remove_notice( 'install_failed' );
         }
 
+        public function update_failed()
+        {
+            include( 'notices/html-notice-update-failed.php' );
+            self::remove_notice( 'update_failed' );
+        }
+
         public function install_success()
         {
             include( 'notices/html-notice-install-success.php' );

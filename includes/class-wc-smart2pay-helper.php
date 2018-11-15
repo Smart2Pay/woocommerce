@@ -30,6 +30,7 @@ class WC_S2P_Helper
             'accountnumber' => WC_s2p()->__( 'Account Number' ),
             'accountholder' => WC_s2p()->__( 'Account Holder' ),
             'iban' => WC_s2p()->__( 'IBAN' ),
+            'amounttopay' => WC_s2p()->__( 'Amount To Pay' ),
         );
     }
 
@@ -61,7 +62,7 @@ class WC_S2P_Helper
         if( !function_exists( 'wc_get_order' ) )
             return false;
 
-        include_once( S2P_SDK_DIR_CLASSES.'s2p_sdk_values_source_article_type.inc.php' );
+        include_once( S2P_SDK_DIR_CLASSES.'S2P_SDK_Values_Source_Article_Type.php' );
 
         /** @var WC_Order $order_obj */
         $order_obj = false;
