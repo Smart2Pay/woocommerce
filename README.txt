@@ -29,7 +29,7 @@ local method of payment to your customers!
 
 == Changelog ==
 
-= 1.2.0 =
+= 1.2.1 =
 * Updated code to work with WooCommerce 3.5.1, WordPress 4.9.8 with Smart2Pay SDK 2.1.9
 
 = 1.1.0 =

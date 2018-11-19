@@ -362,7 +362,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 
         $show_in_grid = $this->check_settings_checkbox_value( 'show_methods_in_grid' );
         $display_surcharge = $this->check_settings_checkbox_value( 'display_surcharge' );
-        $grid_column_number = ((empty( $this->settings['grid_column_number'] ) or $this->settings['grid_column_number'] > 3)?3:$this->settings['grid_column_number']);
+        $grid_column_number = ((empty( $this->settings['grid_column_number'] ) or $this->settings['grid_column_number'] > 5)?5:$this->settings['grid_column_number']);
 
         ?>
         <style>
@@ -1043,7 +1043,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
             'grid_column_number' => array(
                 'title' => WC_s2p()->__( 'Grid column number' ),
                 'type' => 'text',
-                'description' => WC_s2p()->__( 'Please provide a number, if left blank, the default value is 3 (This value is used only if above option is checked)' ),
+                'description' => WC_s2p()->__( 'Please provide a number, if left blank, the default value is 3 (This value is used only if above option is checked) Max 5 columns.' ),
                 'default' => 3,
             ),
             'product_description_ref' => array(
