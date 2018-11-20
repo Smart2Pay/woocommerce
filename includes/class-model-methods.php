@@ -161,11 +161,15 @@ class WC_S2P_Methods_Model extends WC_S2P_Model
         {
             if( empty( $linkage_arr['country_code'] )
              or empty( $linkage_arr['method_id'] )
-             or strtoupper( $linkage_arr['country_code'] ) == 'AA' )
+             //or strtoupper( $linkage_arr['country_code'] ) == 'AA'
+            )
                 continue;
 
             if( empty( $return_arr[$linkage_arr['method_id']] ) )
                 $return_arr[$linkage_arr['method_id']] = array();
+
+            if( strtoupper( $linkage_arr['country_code'] ) == 'AA' )
+                $linkage_arr['country_name'] = WC_s2p()->__( 'International' );
 
             $return_arr[$linkage_arr['method_id']][$linkage_arr['country_code']] = $linkage_arr['country_name'];
         }

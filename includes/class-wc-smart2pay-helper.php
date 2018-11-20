@@ -41,6 +41,22 @@ class WC_S2P_Helper
         return (!empty( $all_titles[$key] )?$all_titles[$key]:$key);
     }
 
+    public static function convert_to_live_merchant_transaction_id( $mt_id )
+    {
+        return 'WOO_'.base_convert( time(), 10, 36 ).'_'.$mt_id;
+    }
+
+    public static function convert_from_live_merchant_transaction_id( $mt_id )
+    {
+        if( strstr( $mt_id, '_' ) !== false
+        and strtoupper( substr( $mt_id, 0, 3 ) ) == 'WOO'
+        and ($mtid_arr = explode( '_', $mt_id, 3 ))
+        and !empty( $mtid_arr[2] ) )
+            $mt_id = $mtid_arr[2];
+
+        return intval( $mt_id );
+    }
+
     public static function convert_to_demo_merchant_transaction_id( $mt_id )
     {
         return 'DEMO_'.base_convert( time(), 10, 36 ).'_'.$mt_id;

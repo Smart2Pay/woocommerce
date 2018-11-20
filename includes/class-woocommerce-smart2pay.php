@@ -405,10 +405,13 @@ class Woocommerce_Smart2pay
         if( empty( $data ) )
             $data = self::S2P_STATUS_FAILED;
 
-        if( !($mtid = WC_S2P_Helper::convert_from_demo_merchant_transaction_id( $mtid )) )
+        if( !($new_mtid = WC_S2P_Helper::convert_from_demo_merchant_transaction_id( $mtid ))
+        and !($new_mtid = WC_S2P_Helper::convert_from_live_merchant_transaction_id( $mtid )) )
         {
             return WC_s2p()->__( 'Unknown transaction.' );
         }
+
+        $mtid = $new_mtid;
 
         $check_arr = array();
         $check_arr['order_id'] = $mtid;

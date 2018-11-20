@@ -29,6 +29,12 @@ local method of payment to your customers!
 
 == Changelog ==
 
+= 1.2.2 =
+* Changed transaction ID sent to payment server so cart with not be
+ invalidated after we receive a transaction error from server before
+ redirecting to payment page.
+* Displaying International for payment methods that can process internationally
+
 = 1.2.1 =
 * Updated code to work with WooCommerce 3.5.1, WordPress 4.9.8 with Smart2Pay SDK 2.1.9
 

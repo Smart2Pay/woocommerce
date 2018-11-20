@@ -729,12 +729,21 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                             {
                                 ?><strong><?php echo WC_s2p()->__( 'Available in the following countries' )?></strong>: <?php
                                 $first_country = true;
+                                $countries_str = '';
                                 foreach( $methods_countries_arr[$method_arr['method_id']] as $country_code => $country_name )
                                 {
-                                    echo ($first_country?'':', ').$country_name.' ('.$country_code.')';
+                                    if( strtoupper( $country_code ) == 'AA' )
+                                    {
+                                        $countries_str = '<strong>'.WC_s2p()->__( 'International' ).'</strong>';
+                                        break;
+                                    }
+
+                                    $countries_str .= ($first_country?'':', ').$country_name.' ('.$country_code.')';
 
                                     $first_country = false;
                                 }
+
+                                echo $countries_str;
                                 ?>.<?php
                             }
                             ?>
@@ -1295,7 +1304,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         }
 
         if( $this->settings['environment'] != Woocommerce_Smart2pay_Environment::ENV_DEMO )
-            $merchant_transaction_id = $order->get_id();
+            $merchant_transaction_id = WC_S2P_Helper::convert_to_live_merchant_transaction_id( $order->get_id() );
         else
             $merchant_transaction_id = WC_S2P_Helper::convert_to_demo_merchant_transaction_id( $order->get_id() );
 

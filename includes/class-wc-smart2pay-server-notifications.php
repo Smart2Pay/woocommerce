@@ -118,12 +118,21 @@ class WC_S2P_Server_Notifications extends WC_S2P_Base
                     exit;
                 }
 
+                /** @var WC_S2P_Transactions_Model $transactions_model */
+                if( !($merchanttransactionid = WC_S2P_Helper::convert_from_live_merchant_transaction_id( $payment_arr['merchanttransactionid'] )) )
+                {
+                    $error_msg = 'Couldn\'t obtain transactions model. Please retry.';
+                    WC_s2p()->logger()->log( array( 'message' => $error_msg, 'order_id' => $payment_arr['merchanttransactionid'] ) );
+                    echo $error_msg;
+                    exit;
+                }
+
                 if( !isset( $payment_arr['amount'] ) or !isset( $payment_arr['currency'] ) )
                 {
                     $error_msg = 'Amount or Currency not provided.';
                     $error_msg .= 'Input buffer: '.$notification_obj->get_input_buffer();
 
-                    WC_s2p()->logger()->log( array( 'message' => $error_msg, 'order_id' => $payment_arr['merchanttransactionid'] ) );
+                    WC_s2p()->logger()->log( array( 'message' => $error_msg, 'order_id' => $merchanttransactionid ) );
                     echo $error_msg;
                     exit;
                 }
@@ -132,18 +141,18 @@ class WC_S2P_Server_Notifications extends WC_S2P_Base
                 if( !($transactions_model = WC_s2p()->get_loader()->load_model( 'WC_S2P_Transactions_Model' )) )
                 {
                     $error_msg = 'Couldn\'t obtain transactions model. Please retry.';
-                    WC_s2p()->logger()->log( array( 'message' => $error_msg, 'order_id' => $payment_arr['merchanttransactionid'] ) );
+                    WC_s2p()->logger()->log( array( 'message' => $error_msg, 'order_id' => $merchanttransactionid ) );
                     echo $error_msg;
                     exit;
                 }
 
                 $check_arr = array();
-                $check_arr['order_id'] = $payment_arr['merchanttransactionid'];
+                $check_arr['order_id'] = $merchanttransactionid;
 
                 if( !($transaction_arr = $transactions_model->get_details_fields( $check_arr )) )
                 {
-                    $error_msg = 'Couldn\'t obtain transaction details for id ['.$payment_arr['merchanttransactionid'].'].';
-                    WC_s2p()->logger()->log( array( 'message' => $error_msg, 'order_id' => $payment_arr['merchanttransactionid'] ) );
+                    $error_msg = 'Couldn\'t obtain transaction details for id ['.$merchanttransactionid.'].';
+                    WC_s2p()->logger()->log( array( 'message' => $error_msg, 'order_id' => $merchanttransactionid ) );
                     echo $error_msg;
                     exit;
                 }
@@ -156,7 +165,7 @@ class WC_S2P_Server_Notifications extends WC_S2P_Base
                                  ' OR '.
                                  $transaction_arr['currency'].' != '.$payment_arr['currency'].']';
 
-                    WC_s2p()->logger()->log( array( 'message' => $error_msg, 'order_id' => $payment_arr['merchanttransactionid'] ) );
+                    WC_s2p()->logger()->log( array( 'message' => $error_msg, 'order_id' => $merchanttransactionid ) );
                     echo $error_msg;
                     exit;
                 }
@@ -165,7 +174,7 @@ class WC_S2P_Server_Notifications extends WC_S2P_Base
                 {
                     $error_msg = 'Couldn\'t obtain order details [#'.$transaction_arr['order_id'].']';
 
-                    WC_s2p()->logger()->log( array( 'message' => $error_msg, 'order_id' => $payment_arr['merchanttransactionid'] ) );
+                    WC_s2p()->logger()->log( array( 'message' => $error_msg, 'order_id' => $merchanttransactionid ) );
                     echo $error_msg;
                     exit;
                 }
@@ -180,14 +189,14 @@ class WC_S2P_Server_Notifications extends WC_S2P_Base
                 if( !($new_transaction_arr = $transactions_model->save_transaction( $edit_arr )) )
                 {
                     $error_msg = 'Couldn\'t save transaction details to database [#'.$transaction_arr['id'].', Order: '.$transaction_arr['order_id'].'].';
-                    WC_s2p()->logger()->log( array( 'message' => $error_msg, 'order_id' => $payment_arr['merchanttransactionid'] ) );
+                    WC_s2p()->logger()->log( array( 'message' => $error_msg, 'order_id' => $merchanttransactionid ) );
                     echo $error_msg;
                     exit;
                 }
 
                 WC_s2p()->logger()->log( array(
-                                             'message' => 'Received '.$status_title.' notification for transaction '.$payment_arr['merchanttransactionid'].'.',
-                                             'order_id' => $payment_arr['merchanttransactionid'] ) );
+                                             'message' => 'Received '.$status_title.' notification for transaction '.$merchanttransactionid.'.',
+                                             'order_id' => $merchanttransactionid ) );
 
                 // Update database according to payment status
                 switch( $payment_arr['status']['id'] )
@@ -204,7 +213,7 @@ class WC_S2P_Server_Notifications extends WC_S2P_Base
 
                         WC_s2p()->logger()->log( array(
                                                      'message' => 'Payment success!',
-                                                     'order_id' => $payment_arr['merchanttransactionid'] ) );
+                                                     'order_id' => $merchanttransactionid ) );
                     break;
 
                     case S2P_SDK\S2P_SDK_Meth_Payments::STATUS_CANCELLED:
