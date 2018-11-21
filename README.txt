@@ -29,6 +29,10 @@ local method of payment to your customers!
 
 == Changelog ==
 
+= 1.2.3 =
+* Fixed sending street parameter (for billing and shipping addresses)
+ in payment request
+
 = 1.2.2 =
 * Changed transaction ID sent to payment server so cart with not be
  invalidated after we receive a transaction error from server before

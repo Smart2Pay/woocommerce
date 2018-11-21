@@ -1334,7 +1334,8 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         {
             $street_str = WC_S2P_Helper::mb_substr( $billing_address_1, 0, 100 );
             $street_number_str = WC_S2P_Helper::mb_substr( $billing_address_1, 100 );
-        }
+        } else
+            $street_str = $billing_address_1;
 
         $street_number_str .= $order->get_billing_address_2();
 
@@ -1356,7 +1357,8 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
         {
             $street_str = WC_S2P_Helper::mb_substr( $shipping_address_1, 0, 100 );
             $street_number_str = WC_S2P_Helper::mb_substr( $shipping_address_1, 100 );
-        }
+        } else
+            $street_str = $shipping_address_1;
 
         $street_number_str .= $order->get_shipping_address_2();
 
