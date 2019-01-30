@@ -78,7 +78,7 @@ class WC_S2P_Helper
         if( !function_exists( 'wc_get_order' ) )
             return false;
 
-        include_once( S2P_SDK_DIR_CLASSES.'S2P_SDK_Values_Source_Article_Type.php' );
+        include_once( S2P_SDK_DIR_CLASSES.'S2P_SDK_Values_Sources_Article_Type.php' );
 
         /** @var WC_Order $order_obj */
         $order_obj = false;
