@@ -29,6 +29,10 @@ local method of payment to your customers!
 
 == Changelog ==
 
+= 1.2.4 =
+* Fixed a file include (which lead to transactions not being processed)
+* Checked support for WordPress 5.0.3, WooCommerce 3.5.4
+
 = 1.2.3 =
 * Fixed sending street parameter (for billing and shipping addresses)
  in payment request
