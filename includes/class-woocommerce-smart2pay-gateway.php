@@ -427,7 +427,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
                             if( $this->settings['methods_display_mode'] == Woocommerce_Smart2pay_Displaymode::MODE_BOTH )
                                 echo '<br/>';
 
-                            ?><span class="s2p-method-name"><?php echo $method_arr['display_name'] ?></span><div style="clear:both"></div><?php
+                            ?><span class="s2p-method-name"><?php echo $method_arr['display_name']?></span><div style="clear:both"></div><?php
                         }
 
                         if( $surcharge_explained_str != '' )
@@ -476,7 +476,7 @@ class WC_Gateway_Smart2Pay extends WC_Payment_Gateway
 
                         ?>
                         </div>
-                        <div class="s2p-method-description"><?php echo $method_arr['description'] ?></div><div style="clear:both"></div>
+                        <div class="s2p-method-description"><?php echo WC_s2p()->__( $method_arr['description'] )?></div><div style="clear:both"></div>
                     </label></td>
                 </tr>
                 <?php

@@ -29,6 +29,11 @@ local method of payment to your customers!
 
 == Changelog ==
 
+= 1.2.5 =
+* Updated language po file
+* When displaying payment methods in checkout, description is passed
+ through language function
+
 = 1.2.4 =
 * Fixed a file include (which lead to transactions not being processed)
 * Checked support for WordPress 5.0.3, WooCommerce 3.5.4
